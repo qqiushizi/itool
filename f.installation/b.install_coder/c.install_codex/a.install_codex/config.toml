@@ -1,0 +1,12 @@
+# ------------------------------
+# 全局默认配置
+# ------------------------------
+# 默认使用的模型和提供商
+model = "qwen3.5"
+provider = "local"
+
+[providers.local]
+name = "Local 本地大模型"
+baseURL = "http://127.0.0.1:5172/v1"
+apiKey = "sk-1234"
+wireApi = "chat"

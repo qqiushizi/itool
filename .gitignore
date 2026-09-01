@@ -1,0 +1,10 @@
+token.txt
+server.pid
+server.log
+nohup.out
+*.log
+kernel_meta/
+outputs/
+__pycache__/
+*.pyc
+.DS_Store

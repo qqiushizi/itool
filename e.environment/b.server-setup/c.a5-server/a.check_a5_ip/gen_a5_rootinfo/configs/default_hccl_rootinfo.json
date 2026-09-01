@@ -1,0 +1,319 @@
+{
+  "version": "2.0",
+  "topo_file_path": "/usr/local/Ascend/driver/topo/950/atlas_350_3.json",
+  "rank_count": 8,
+  "rank_list": [
+    {
+      "device_id": 0,
+      "device_port": 60100,
+      "local_id": 0,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0020",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0028",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0030",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 1,
+      "device_port": 60101,
+      "local_id": 1,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0021",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0029",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0031",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 2,
+      "device_port": 60102,
+      "local_id": 2,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0022",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002a",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0032",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 3,
+      "device_port": 60103,
+      "local_id": 3,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0023",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002b",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0033",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 4,
+      "device_port": 60104,
+      "local_id": 4,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0020",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0028",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0030",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 5,
+      "device_port": 60105,
+      "local_id": 5,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0021",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0029",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0031",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 6,
+      "device_port": 60106,
+      "local_id": 6,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0022",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002a",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0032",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 7,
+      "device_port": 60107,
+      "local_id": 7,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "3a1c4e6c8acb",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0023",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002b",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0033",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

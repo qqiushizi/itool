@@ -1,0 +1,447 @@
+{
+  "version": "2.0",
+  "topo_file_path": "/etc/atlas_350_3.json",
+  "rank_count": 8,
+  "rank_list": [
+    {
+      "device_id": 0,
+      "local_id": 0,
+      "device_port": 60100,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "1",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0020",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0028",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0030",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+        {
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.197.185",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 1,
+      "local_id": 1,
+      "device_port": 60101,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "1",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0021",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0029",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0031",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+	{
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.205.149",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 2,
+      "local_id": 2,
+      "device_port": 60102,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "1",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0022",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002a",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0032",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+	{
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.213.103",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 3,
+      "local_id": 3,
+      "device_port": 60103,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "1",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0023",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002b",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0033",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+	{
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.221.76",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 4,
+      "local_id": 4,
+      "device_port": 60104,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "2",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0020",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0028",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0030",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+	{
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.237.12",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 5,
+      "local_id": 5,
+      "device_port": 60105,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "2",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0021",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0029",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0031",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+	{
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.229.55",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 6,
+      "local_id": 6,
+      "device_port": 60106,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "2",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0022",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002a",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0032",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+	{
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.252.205",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device_id": 7,
+      "local_id": 7,
+      "device_port": 60107,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "2",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0023",
+              "ports": [
+                "0/4"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf002b",
+              "ports": [
+                "0/5"
+              ],
+              "plane_id": "plane_0"
+            },
+            {
+              "addr_type": "EID",
+              "addr": "000000000000000000100000dfdf0033",
+              "ports": [
+                "0/6"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        },
+	{
+          "net_layer": 3,
+          "net_instance_id": "cluster",
+          "net_type": "CLOS",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "28.235.244.243",
+              "ports": [
+                "d2h"
+              ],
+              "plane_id": "plane_0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

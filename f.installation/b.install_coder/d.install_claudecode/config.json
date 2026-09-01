@@ -1,0 +1,16 @@
+{
+  "HOST": "127.0.0.1",
+  "PORT": 5172,
+  "EnableFormatConvert": true, 
+  "Providers": [
+    {
+      "name": "local",
+      "api_base_url": "http://127.0.0.1:5172/v1",
+      "api_key": "sk-1234",
+      "models": ["qwen3.5"]
+    }
+  ],
+  "Router": {
+    "default": "local,qwen3.5"
+  }
+}

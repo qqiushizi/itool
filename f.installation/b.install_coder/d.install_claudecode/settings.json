@@ -1,0 +1,13 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:5172",
+    "ANTHROPIC_AUTH_TOKEN": "sk-1234",
+    "ANTHROPIC_MODEL": "qwen3.5",
+    "ANTHROPIC_SMALL_FAST_MODEL": "qwen3.5",
+    "API_TIMEOUT_MS": "300000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
+  "alwaysThinkingEnabled": true,
+  "customSystemPrompt": "",
+  "theme": "auto"
+}

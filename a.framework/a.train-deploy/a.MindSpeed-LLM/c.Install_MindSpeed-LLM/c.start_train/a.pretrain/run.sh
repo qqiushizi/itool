@@ -1,0 +1,130 @@
+#!/bin/bash
+
+source ../../setenv.sh
+cd $MindSpeed_LLM_PATH
+
+export CUDA_DEVICE_MAX_CONNECTIONS=1
+export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
+export TASK_QUEUE_ENABLE=2
+export CPU_AFFINITY_CONF=2
+
+#export ASCEND_RT_VISIBLE_DEVICES=7
+NPUS_PER_NODE=1
+MASTER_ADDR=localhost
+MASTER_PORT=6011
+NNODES=1
+NODE_RANK=0
+WORLD_SIZE=$(($NPUS_PER_NODE*$NNODES))
+
+# please fill these path configurations
+CKPT_LOAD_DIR="$MindSpeed_LLM_PATH/imodels/model_mcore/$Model_Name/"
+CKPT_SAVE_DIR="$MindSpeed_LLM_PATH/imodels/model_save/$Model_Name/"
+DATA_PATH="$MindSpeed_LLM_PATH/idatasets/enwiki_text_document"
+TOKENIZER_PATH="$MindSpeed_LLM_PATH/imodels/model_hf/$Model_Name/"
+
+TP=1
+PP=1
+MBS=1
+GBS=32
+SEQ_LENGTH=4096
+TRAIN_ITERS=2000
+
+DISTRIBUTED_ARGS="
+    --nproc_per_node $NPUS_PER_NODE \
+    --nnodes $NNODES \
+    --node_rank $NODE_RANK \
+    --master_addr $MASTER_ADDR \
+    --master_port $MASTER_PORT
+"
+
+OPTIMIZE_ARGS="
+    --use-flash-attn \
+    --use-fused-rotary-pos-emb \
+    --use-rotary-position-embeddings \
+    --use-fused-swiglu \
+    --use-fused-rmsnorm \
+    --no-masked-softmax-fusion \
+    --use-distributed-optimizer
+"
+
+MODEL_PARALLEL_ARGS="
+    --tensor-model-parallel-size ${TP} \
+    --pipeline-model-parallel-size ${PP} \
+"
+
+TRAIN_ARGS="
+    --micro-batch-size ${MBS} \
+    --global-batch-size ${GBS} \
+    --lr 1.25e-6 \
+    --min-lr 1.25e-7 \
+    --weight-decay 1e-1 \
+    --attention-dropout 0.0 \
+    --hidden-dropout 0.0 \
+    --clip-grad 1.0 \
+    --adam-beta1 0.9 \
+    --adam-beta2 0.95 \
+    --initial-loss-scale 4096 \
+    --seed 42 \
+    --bf16 \
+    --train-iters ${TRAIN_ITERS} \
+    --seq-length ${SEQ_LENGTH} \
+    --no-shared-storage
+"
+
+GPT_ARGS="
+    --use-mcore-models \
+    --sequence-parallel \
+    --spec mindspeed_llm.tasks.models.spec.qwen3_spec layer_spec \
+    --kv-channels 128 \
+    --qk-layernorm \
+    --num-layers 28 \
+    --hidden-size 1024 \
+    --num-attention-heads 16 \
+    --ffn-hidden-size 3072 \
+    --max-position-embeddings 32768 \
+    --make-vocab-size-divisible-by 1 \
+    --padded-vocab-size 151936 \
+    --rotary-base 1000000 \
+    --disable-bias-linear \
+    --swiglu \
+    --tokenizer-type PretrainedFromHF \
+    --tokenizer-name-or-path ${TOKENIZER_PATH} \
+    --normalization RMSNorm \
+    --position-embedding-type rope \
+    --norm-epsilon 1e-6 \
+    --no-gradient-accumulation-fusion \
+    --attention-softmax-in-fp32 \
+    --exit-on-missing-checkpoint \
+    --group-query-attention \
+    --num-query-groups 8 \
+    --no-load-optim \
+    --no-load-rng \
+    --seed 42 \
+    --bf16
+"
+
+DATA_ARGS="
+    --data-path $DATA_PATH \
+    --split 100,0,0
+"
+
+OUTPUT_ARGS="
+    --log-interval 1 \
+    --save-interval 1000 \
+    --eval-interval 1000 \
+    --eval-iters 0 \
+"
+
+torchrun $DISTRIBUTED_ARGS pretrain_gpt.py \
+    $GPT_ARGS \
+    $DATA_ARGS \
+    $OUTPUT_ARGS \
+    $OPTIMIZE_ARGS \
+    $TRAIN_ARGS \
+    $MODEL_PARALLEL_ARGS \
+    --distributed-backend nccl \
+    --log-throughput \
+    --load ${CKPT_LOAD_DIR} \
+    --save ${CKPT_SAVE_DIR} \
+    --transformer-impl local \
+    | tee $MindSpeed_LLM_PATH/logs/train_mcore_qwen3_0point6b.log

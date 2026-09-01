@@ -6,6 +6,8 @@
 - 远程：`itool-server.py` 托管菜单/脚本，客户端 `curl | bash` 零安装
 - 目录约定：`字母.名称` 命名，按前缀排序，叶子目录放 `run.sh`
 
+> 📖 具体操作手册（照抄就能跑）见 [**USAGE.md**](USAGE.md)。
+
 ---
 
 ## 目录结构
@@ -27,6 +29,27 @@ itool/
 ├── p.practise          AI 第一性原理学习实验(141 个)
 └── w.windows           WSL 安装
 ```
+
+---
+
+## 项目流程图
+
+```mermaid
+flowchart TB
+    L[本地用户<br/>bash itool.sh] --> T[itool.sh<br/>终端文件夹导航器 TUI]
+    R[远程机器 B<br/>curl -s .../menu | bash] --> C[menu<br/>远程客户端模板]
+    C --> S[itool-server.py<br/>HTTP 服务 只读<br/>/menu /api/menu /api/pack /api/cat]
+    T --> REPO
+    S --> REPO
+    REPO[脚本仓库 顶层目录<br/>a.framework · c.precision · d.ops_develop · e.environment<br/>f.installation · g.collectlogs · h.auto-test · p.practise · w.windows]
+    REPO --> S1
+    subgraph OPS[d.ops_develop 算子开发工作流]
+        direction TB
+        S1[① a.env_check<br/>环境检查 / 下载CANN] --> S2[② b.env_setup<br/>拉镜像 / 起容器] --> S3[③ c.design<br/>需求分析 → op.json] --> S4[④ d.scaffold<br/>msopgen / ops-transformer / torchbind]
+    end
+```
+
+![itool 项目流程图](docs/itool-flow.png)
 
 ---
 

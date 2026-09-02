@@ -23,7 +23,7 @@ d.ops_develop/
 ## 快速开始
 
 ```bash
-# ① 服务器 CANN 检查(汇总: 安装目录/版本/驱动/激活状态)
+# ① 服务器 CANN 检查(汇总报告) → 自动给出方案, 选择编号一键修复(含生成 activate_cann.sh)
 bash d.ops_develop/a.env_check/a.check_cann/run.sh
 
 # (可选) 下载 CANN 包

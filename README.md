@@ -101,7 +101,7 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 ```
 d.ops_develop/
 ├── a.env_check/                       环境准备(宿主机)
-│   ├── a.check_cann/run.sh          ① 服务器 CANN 检查(安装目录/版本/驱动/激活) 汇总报告
+│   ├── a.check_cann/run.sh          ① 服务器 CANN 检查(安装目录/版本/驱动/激活) 汇总报告 + 一键修复向导
 │   ├── b.download_cann/run.sh         下载 CANN 包(toolkit / kernels / 合一包), 支持 CHECK_ONLY
 │   └── c.install_cann/run.sh        ② CANN 安装(交互: 方式/位置/source 激活)
 ├── b.env_setup/                       容器化开发环境
@@ -119,7 +119,7 @@ d.ops_develop/
 ### 完整示例
 
 ```bash
-# ① 服务器 CANN 检查(汇总: 安装目录/版本/驱动/激活状态)
+# ① 服务器 CANN 检查(汇总报告) → 自动给出方案, 选择编号即可一键修复(含生成 activate_cann.sh)
 bash d.ops_develop/a.env_check/a.check_cann/run.sh
 
 # (可选) 下载 CANN 包

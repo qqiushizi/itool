@@ -213,6 +213,8 @@ bash d.ops_develop/b.env_setup/a.pull_image/run.sh
 
 拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：`IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash .../a.pull_image/run.sh`。
 
+> 网络健壮性：脚本会依次尝试 quay.io 官方 API / Docker Registry v2 API 并自动重试；若都失败，会给出兜底选项——`[1] 重试` / `[2] 用内置常见 tag 列表` / `[3] 手动输入镜像`，无需手动排查。
+
 ### 3.5 ④ 容器实例化（交互 + 生成可编辑起容器脚本）
 
 ```bash

@@ -105,53 +105,128 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 
 ## 3. 算子开发工作流（d.ops_develop）
 
-面向：在客户机器上开发算子 / 基于算子源码改造。四步可独立执行。
+面向：在客户机器上开发算子 / 基于算子源码改造。环境准备五步 ①→⑤ + 开发两步 ⑥→⑦，均可独立执行。
 
-### 3.1 环境检查
+### 3.1 ① 服务器 CANN 检查（安装目录/版本/驱动/激活）
 
 ```bash
-bash d.ops_develop/a.env_check/a.check_env/run.sh
+bash d.ops_develop/a.env_check/a.check_cann/run.sh
 ```
 
-输出会先打印环境变量，再逐项检查组件并给建议：
+汇总输出示例（检查主机/OS、驱动 HDK、CANN 安装目录、toolkit/kernels 版本、环境变量激活状态、Python/框架、Docker）：
 
 ```
-===== 组件检查 (算子开发依赖) =====
-  [ OK ] TOOLKIT (ascend-toolkit)  路径: /usr/local/Ascend/ascend-toolkit/latest
-  [缺失] OPP (算子原型库)
-          建议: 设置 ASCEND_OPP_PATH 指向 <toolkit>/opp
-  [缺失] torch
-          建议: pip install torch (昇腾环境需配套 torch/torch_npu 版本)
-  [ OK ] cmake   cmake version 3.31.3
-  [ OK ] gcc     gcc (GCC) 11.4.0
+════════════════════════════════════════════════════
+  【汇总报告】
+════════════════════════════════════════════════════
+  安装目录    : /usr/local/Ascend/ascend-toolkit/latest
+  CANN 版本   : version=8.1.RC1
+  激活脚本    : /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
+  当前激活状态: 已找到 set_env.sh
+  驱动信息    : driver version = 25.0.1
+  NPU 设备数  : 8
+────────────────────────────────────────────────────
+  下一步建议: 环境基本就绪 → ③ 拉取镜像 → ④ 起容器 → ⑤ 进容器检查
 ```
 
-### 3.2 下载 CANN（先探测，再正式下载）
+### 3.2 下载 CANN 包（可选，先探测再下载）
 
 ```bash
 # 只探测 URL 是否可达(不下载大包)
 CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 CHECK_ONLY=1 \
   bash d.ops_develop/a.env_check/b.download_cann/run.sh
 
-# 正式下载(toolkit 约 2.2G + kernel 约 1.9G, 支持断点续传)
+# 正式下载(默认 toolkit + kernels, 支持断点续传)
 CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 \
   bash d.ops_develop/a.env_check/b.download_cann/run.sh
+
+# 仅 toolkit / 合一包
+MODE=toolkit  CANN_VERSION=8.1.RC1 bash d.ops_develop/a.env_check/b.download_cann/run.sh
+MODE=combined CANN_VERSION=8.1.RC1 bash d.ops_develop/a.env_check/b.download_cann/run.sh
 ```
 
 内网环境可换源：`CANN_BASE_URL=https://内网镜像/CANN/...`。
 
-### 3.3 拉镜像 + 起容器
+### 3.3 ② CANN 安装（交互：方式 / 位置 / source 激活）
 
 ```bash
-# 镜像 tag 形如 8.1.rc1-910b-ubuntu22.04-py3.10
-CANN_VERSION=8.1.rc1 CHIP=910b bash d.ops_develop/b.env_setup/a.pull_vllm_ascend/run.sh
-
-# 实例化(自动枚举 /dev/davinci* 挂载)
-bash d.ops_develop/b.env_setup/b.run_container/run.sh cann-910b:8.1.rc1 my_ascend
-docker exec -it my_ascend bash
+bash d.ops_develop/a.env_check/c.install_cann/run.sh
 ```
 
-### 3.4 算子需求分析 → 生成 op.json
+交互选择：
+
+```
+请选择安装方式:
+  1) toolkit + kernels(ops)   [算子开发推荐]
+  2) 仅 toolkit
+  3) 合一包 (驱动 + toolkit + 其他, 单个 .run)
+选择 [1]:
+CANN 版本 [8.1.RC1]:
+安装位置 [/usr/local/Ascend/ascend-toolkit]:
+```
+
+脚本会：定位/自动下载安装包 → 执行 `.run` 安装(非 root 自动加 sudo) → `source <安装目录>/set_env.sh` 激活 → `python3 -c "import acl"` 验证 → 可选写入 `~/.bashrc` 永久激活。
+
+### 3.4 ③ 镜像拉取（quay.io 可视化选 tag）
+
+```bash
+bash d.ops_develop/b.env_setup/a.pull_image/run.sh
+```
+
+交互流程：自动查询 `quay.io/ascend/cann` 全部 tag → 按 芯片/版本/系统/Python 筛选 → 编号列表选择：
+
+```
+按需筛选(直接回车=不限):
+  芯片(910b/910a/950/310p, 留空=全部) []: 910b
+  CANN 版本(如 8.1.rc1 / 9.0.0, 留空=全部) []:
+  系统(如 ubuntu22.04 / openeuler22.03, 留空=全部) []:
+  Python(如 py3.10 / py3.11, 留空=全部) []:
+
+════════ 匹配的镜像 tag (3) ════════
+    1) 8.1.rc1-910b-ubuntu22.04-py3.10
+    2) 8.1.rc1-910b-ubuntu24.04-py3.10
+    3) 9.0.0-910b-ubuntu22.04-py3.10
+────────────────────────────────────
+  选择编号 [3]:
+```
+
+拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：`IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash .../a.pull_image/run.sh`。
+
+### 3.5 ④ 容器实例化（交互 + 生成可编辑起容器脚本）
+
+```bash
+bash d.ops_develop/b.env_setup/b.run_container/run.sh
+```
+
+交互收集镜像/容器名/工作目录/共享内存，自动枚举 `/dev/davinci*` 设备，并生成 **`start_container.sh`**（客户可自行修改后重复执行），随后立即启动容器：
+
+```
+镜像 [cann-910b:8.1.rc1]:
+容器名 [asc_dev]:
+工作目录(映射到容器 /workspace) [/data/ops]:
+共享内存(--shm-size, 如 16g) [16g]:
+✔ 已生成起容器脚本: /data/ops/start_container.sh
+```
+
+改完直接 `bash start_container.sh` 即可重建容器；进入：`docker exec -it asc_dev bash`。
+
+### 3.6 ⑤ 进容器检查软件包 → 确认可开始算子开发
+
+```bash
+bash d.ops_develop/b.env_setup/c.check_in_container/run.sh asc_dev
+```
+
+在容器内检查 CANN/torch/torch_npu/编译链/NPU 设备，并给出结论：
+
+```
+===== 6. 结论 =====
+  ✅ GO: 容器内软件包齐全, 可以开始算子开发。
+  建议下一步:
+    · 算子需求分析:  bash d.ops_develop/c.design/a.op_spec/run.sh
+    · 生成工程:      bash d.ops_develop/d.scaffold/a.msopgen/run.sh
+```
+
+### 3.7 ⑥ 算子需求分析 → 生成 op.json
 
 ```bash
 bash d.ops_develop/c.design/a.op_spec/run.sh
@@ -174,7 +249,7 @@ bash d.ops_develop/c.design/a.op_spec/run.sh
 
 生成 `op_design_MatMulCustom/op.json`（msopgen 格式）和 `op_spec.md`。
 
-### 3.5 生成算子工程 / 接入
+### 3.8 ⑦ 生成算子工程 / 接入
 
 ```bash
 # 轻量: msopgen 生成 AscendC 工程

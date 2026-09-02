@@ -45,7 +45,7 @@ flowchart TB
     REPO --> S1
     subgraph OPS[d.ops_develop 算子开发工作流]
         direction TB
-        S1[① a.env_check<br/>环境检查 / 下载CANN] --> S2[② b.env_setup<br/>拉镜像 / 起容器] --> S3[③ c.design<br/>需求分析 → op.json] --> S4[④ d.scaffold<br/>msopgen / ops-transformer / torchbind]
+        S1[① a.check_cann<br/>服务器 CANN 检查] --> S2[② c.install_cann<br/>CANN 安装 / source 激活] --> S3[③ a.pull_image<br/>quay 可视化选 tag] --> S4[④ b.run_container<br/>容器实例化 + 起容器脚本] --> S5[⑤ c.check_in_container<br/>进容器检查软件包] --> S6[⑥ c.design<br/>需求分析 → op.json] --> S7[⑦ d.scaffold<br/>msopgen / ops-transformer / torchbind]
     end
 ```
 
@@ -109,19 +109,21 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 
 ## 算子开发工作流 `d.ops_develop`
 
-面向场景：**在客户机器上开发算子，或基于算子源码做改造**。按四步推进，每步都是独立 `run.sh`，可单独执行。
+面向场景：**在客户机器上开发算子，或基于算子源码做改造**。环境准备按 ①→⑤ 五步推进，每步都是独立 `run.sh`，可单独执行。
 
 ```
 d.ops_develop/
-├── a.env_check/                      ① 环境检查
-│   ├── a.check_env/run.sh            先打印环境变量, 再检查 TOOLKIT/OPP/torch/torch_npu/pybind/cmake/gcc, 给修复建议
-│   └── b.download_cann/run.sh        自动下载 CANN 包(toolkit + kernel), 支持 CHECK_ONLY 探测
-├── b.env_setup/                      ② 环境搭建
-│   ├── a.pull_vllm_ascend/run.sh     用户指定 CANN 版本 → 拉取 vllm-ascend 镜像
-│   └── b.run_container/run.sh        自动枚举 /dev/davinci* → 实例化容器
-├── c.design/                         ③ 算子设计需求分析
+├── a.env_check/                       环境准备(宿主机)
+│   ├── a.check_cann/run.sh          ① 服务器 CANN 检查(安装目录/版本/驱动/激活) 汇总报告
+│   ├── b.download_cann/run.sh         下载 CANN 包(toolkit / kernels / 合一包), 支持 CHECK_ONLY
+│   └── c.install_cann/run.sh        ② CANN 安装(交互: 方式/位置/source 激活)
+├── b.env_setup/                       容器化开发环境
+│   ├── a.pull_image/run.sh          ③ 镜像拉取(quay.io 可视化选 tag)
+│   ├── b.run_container/run.sh       ④ 容器实例化(交互输入 + 生成可编辑 start_container.sh)
+│   └── c.check_in_container/run.sh  ⑤ 进容器检查软件包 → 确认可开始算子开发
+├── c.design/                         ⑥ 算子设计需求分析
 │   └── a.op_spec/run.sh              交互收集(功能/数据类型/典型shape) → 生成 op.json + op_spec.md
-└── d.scaffold/                       ④ 算子脚手架
+└── d.scaffold/                       ⑦ 算子脚手架
     ├── a.msopgen/run.sh              基于 msopgen(轻量) 生成算子工程
     ├── b.ops_transformer/run.sh      拉取 ops-transformer(完善) 源码 + 编译指导
     └── c.torchbind/run.sh            torchbind(CPU+NPU) / vllm_ascend 接入工程
@@ -130,23 +132,29 @@ d.ops_develop/
 ### 完整示例
 
 ```bash
-# ① 检查环境(输出环境变量 + 组件清单 + 修复建议)
-bash d.ops_develop/a.env_check/a.check_env/run.sh
+# ① 服务器 CANN 检查(汇总: 安装目录/版本/驱动/激活状态)
+bash d.ops_develop/a.env_check/a.check_cann/run.sh
 
-# ① 下载 CANN(先探测 URL, 再正式下载)
-CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 CHECK_ONLY=1 \
-  bash d.ops_develop/a.env_check/b.download_cann/run.sh
-CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 \
-  bash d.ops_develop/a.env_check/b.download_cann/run.sh
+# (可选) 下载 CANN 包
+CANN_VERSION=8.1.RC1 CHIP=910b bash d.ops_develop/a.env_check/b.download_cann/run.sh
+MODE=combined CANN_VERSION=8.1.RC1 bash d.ops_develop/a.env_check/b.download_cann/run.sh
 
-# ② 拉镜像 + 起容器(镜像 tag 形如 8.1.rc1-910b-ubuntu22.04-py3.10)
-CANN_VERSION=8.1.rc1 CHIP=910b bash d.ops_develop/b.env_setup/a.pull_vllm_ascend/run.sh
-bash d.ops_develop/b.env_setup/b.run_container/run.sh cann-910b:8.1.rc1 my_ascend
+# ② 交互式安装 CANN(选择 方式/位置, 自动 source 激活)
+bash d.ops_develop/a.env_check/c.install_cann/run.sh
 
-# ③ 需求分析 → 生成 op.json / op_spec.md
+# ③ 拉镜像(quay.io 可视化选择 tag)
+bash d.ops_develop/b.env_setup/a.pull_image/run.sh
+
+# ④ 实例化容器(输入容器名等, 生成 start_container.sh 可自行修改)
+bash d.ops_develop/b.env_setup/b.run_container/run.sh
+
+# ⑤ 进容器检查软件包, 确认可开始算子开发
+bash d.ops_develop/b.env_setup/c.check_in_container/run.sh asc_dev
+
+# ⑥ 需求分析 → 生成 op.json / op_spec.md
 bash d.ops_develop/c.design/a.op_spec/run.sh
 
-# ④ 生成工程
+# ⑦ 生成工程
 bash d.ops_develop/d.scaffold/a.msopgen/run.sh op.json        # msopgen 轻量
 bash d.ops_develop/d.scaffold/b.ops_transformer/run.sh        # ops-transformer 完善
 bash d.ops_develop/d.scaffold/c.torchbind/run.sh AddCustom    # torchbind 接入

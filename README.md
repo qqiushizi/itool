@@ -34,24 +34,9 @@ itool/
 
 ## 项目流程图
 
-```mermaid
-flowchart TB
-    L[本地用户<br/>bash itool.sh] --> T[itool.sh<br/>终端文件夹导航器 TUI]
-    R[远程机器 B<br/>curl -s .../menu | bash] --> C[menu<br/>远程客户端模板]
-    C --> S[itool-server.py<br/>HTTP 服务 只读<br/>/menu /api/menu /api/pack /api/cat]
-    T --> REPO
-    S --> REPO
-    REPO[脚本仓库 顶层目录<br/>a.framework · c.precision · d.ops_develop · e.environment<br/>f.installation · g.collectlogs · h.auto-test · p.practise · w.windows]
-    REPO --> S1
-    subgraph OPS[d.ops_develop 算子开发工作流]
-        direction TB
-        S1[① a.check_cann<br/>服务器 CANN 检查] --> S2[② c.install_cann<br/>CANN 安装 / source 激活] --> S3[③ a.pull_image<br/>quay 可视化选 tag] --> S4[④ b.run_container<br/>容器实例化 + 起容器脚本] --> S5[⑤ c.check_in_container<br/>进容器检查软件包] --> S6[⑥ c.design<br/>需求分析 → op.json] --> S7[⑦ d.scaffold<br/>msopgen / ops-transformer / torchbind]
-    end
-```
-
 ![itool 项目流程图](docs/itool-flow.png)
 
-> 上图由 [docs/itool-flow.dot](docs/itool-flow.dot) 生成：`dot -Tpng -Gdpi=120 docs/itool-flow.dot -o docs/itool-flow.png`（与上方 Mermaid 一致）。
+> 流程图源文件：[docs/itool-flow.dot](docs/itool-flow.dot)，可用 `dot -Tpng -Gdpi=120 docs/itool-flow.dot -o docs/itool-flow.png` 重新生成。
 
 ---
 

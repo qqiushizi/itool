@@ -51,6 +51,8 @@ flowchart TB
 
 ![itool 项目流程图](docs/itool-flow.png)
 
+> 上图由 [docs/itool-flow.dot](docs/itool-flow.dot) 生成：`dot -Tpng -Gdpi=120 docs/itool-flow.dot -o docs/itool-flow.png`（与上方 Mermaid 一致）。
+
 ---
 
 ## 快速开始

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# ③ 镜像拉取 + 容器实例化 (合并脚本)
+# ① 镜像拉取 + 容器实例化 (合并脚本)
 #
 # 功能:
 #   1) 交互/环境变量选择一个 CANN 镜像并 docker pull
@@ -50,7 +50,7 @@ TAGS_FILE="/tmp/itool-cann-tags-$$.txt"
 
 echo ""
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "  ${WHITE}  ③ CANN 镜像拉取 + 容器实例化（合并脚本）${RESET}"
+echo -e "  ${WHITE}  ① CANN 镜像拉取 + 容器实例化（合并脚本）${RESET}"
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
 
 # ============================================================
@@ -439,4 +439,4 @@ fi
 
 echo ""
 echo -e "  ${CYAN}下一步:${RESET} 进入容器后执行环境检查 → docker exec -it $NAME bash"
-echo -e "            容器内执行: bash d.ops_develop/a.env_check/run.sh"
+echo -e "            容器内执行: bash d.ops_develop/b.env_check/run.sh"

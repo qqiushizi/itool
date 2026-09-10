@@ -96,45 +96,44 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 
 ## 算子开发工作流 `d.ops_develop`
 
-面向场景：**在客户机器上开发算子，或基于算子源码做改造**。环境准备按 ①→④ 推进，加上开发两步 ⑤→⑥；其中环境检查合并为单脚本，宿主机/容器通用。每步都是独立 `run.sh`，可单独执行。
+面向场景：**在客户机器上开发算子，或基于算子源码做改造**。工作流先拉镜像、建容器，后续检查/补装/设计/脚手架都在容器内完成。
 
 ```
 d.ops_develop/
-├── a.env_check/                       环境检查(宿主机 / 容器通用, 只读)
-│   ├── run.sh           ① 环境检查(芯片识别 + 版本兼容性矩阵)
-│   └── readme.md         功能说明
-├── b.install_cann/                    CANN toolkit 安装(下载 + 安装合并)
-│   ├── a.cann-9.1.0/run.sh          9.1.0 (推荐)
-│   ├── b.cann-9.0.0/run.sh          9.0.0
-│   ├── c.cann-8.2.RC1/run.sh        8.2.RC1 (旧芯片兼容)
-│   ├── d.cann-8.1.RC1/run.sh        8.1.RC1 (旧芯片兼容)
-│   └── readme.md                      版本说明
-├── c.image_container/                 ③ 镜像拉取 + 容器实例化(合并)
-│   ├── run.sh                         选 tag / docker pull / 生成起容器脚本
+├── a.image_container/                 ① 镜像拉取 + 容器实例化
+│   ├── run.sh                         选 tag / docker pull / 生成 start_container.sh
 │   └── readme.md                      功能说明
+├── b.env_check/                       ② 容器内环境检查（只读）
+│   ├── run.sh                         芯片识别 + 版本兼容矩阵 + 建议
+│   └── readme.md                      功能说明
+├── c.install_cann/                    ③ 按需安装/补装 CANN toolkit
+│   ├── a.cann-9.1.0/run.sh            9.1.0 (推荐)
+│   ├── b.cann-9.0.0/run.sh            9.0.0
+│   ├── c.cann-8.2.RC1/run.sh          8.2.RC1 (旧芯片兼容)
+│   ├── d.cann-8.1.RC1/run.sh          8.1.RC1 (旧芯片兼容)
+│   └── readme.md                      版本说明 + 容器内安装要求
 ├── d.op_design/                       ④ 算子设计需求分析
-│   └── a.op_spec/run.sh              交互收集(功能/数据类型/典型shape) → 生成 op.json + op_spec.md
+│   └── a.op_spec/run.sh              交互收集(功能/数据类型/典型shape) → op.json + op_spec.md
 └── e.op_scaffold/                     ⑤ 算子脚手架
-    ├── a.msopgen/run.sh              基于 msopgen(轻量) 生成算子工程
-    ├── b.ops_transformer/run.sh      拉取 ops-transformer(完善) 源码 + 编译指导
-    └── c.torchbind/run.sh            torchbind(CPU+NPU) / vllm_ascend 接入工程
+    ├── a.msopgen/run.sh               msopgen 生成 AscendC 工程
+    ├── b.ops_transformer/run.sh       拉取 ops-transformer 源码
+    └── c.torchbind/run.sh             torchbind(CPU+NPU) / vllm_ascend 接入工程
 ```
 
 ### 完整示例
 
 ```bash
-# ① 环境检查(宿主机/容器通用: 芯片型号 + 软件版本匹配矩阵)
-bash d.ops_develop/a.env_check/run.sh
+# ① 拉镜像 + 建容器
+bash d.ops_develop/a.image_container/run.sh
 
-# ② CANN toolkit 安装(选择版本, 下载+安装一步完成, 仅 toolkit)
-bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
+# 进入容器
+docker exec -it asc_dev bash
 
-# ③ 镜像拉取 + 容器实例化(合并)
-bash d.ops_develop/c.image_container/run.sh
+# ② 容器内环境检查（只读, 只给结论和建议）
+bash d.ops_develop/b.env_check/run.sh
 
-# 进入容器后再次运行同一个环境检查, 确认容器内版本也匹配
-# docker exec -it asc_dev bash
-# bash d.ops_develop/a.env_check/run.sh
+# ③ 若检查报告提示“安装/更换 CANN”, 再按需执行
+bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh
 
 # ④ 需求分析 → 生成 op.json / op_spec.md
 bash d.ops_develop/d.op_design/a.op_spec/run.sh

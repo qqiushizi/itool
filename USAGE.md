@@ -92,8 +92,9 @@ curl -s -d 'MySecret123' http://<server-A>:5170/api/login
 # 菜单结构
 curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/menu?path=d.ops_develop'
 # → HAS_RUN	0
-#   FOLDER	a.env_check	a
-#   FOLDER	b.install_cann	b
+#   FOLDER	a.image_container	a
+#   FOLDER	b.env_check	b
+#   FOLDER	c.install_cann	c
 #   ...
 
 # 打包下载 + 预览
@@ -105,94 +106,25 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 
 ## 3. 算子开发工作流（d.ops_develop）
 
-面向：在客户机器上开发算子 / 基于算子源码改造。环境准备 ①→④ + 开发两步 ⑤→⑥，均可独立执行。环境检查已合并为单脚本，宿主机与容器通用。
+面向：在客户机器上开发算子 / 基于算子源码改造。工作流先拉镜像、建容器，后续检查与开发均在容器内完成。每步都是独立 `run.sh`。
 
-### 3.1 ① 环境检查（单脚本：芯片型号 + 软件版本匹配矩阵）
+```
+① a.image_container  拉镜像 + 建容器
+② b.env_check        容器内环境检查（只读，只给建议）
+③ c.install_cann     按需安装/补装 CANN toolkit（检查通过可跳过）
+④ d.op_design        需求分析 → op.json + op_spec.md
+⑤ e.op_scaffold      生成算子工程 / 接入
+```
+
+### 3.1 ① 镜像拉取 + 容器实例化
 
 ```bash
-bash d.ops_develop/a.env_check/run.sh
+bash d.ops_develop/a.image_container/run.sh
 ```
 
-该脚本在**当前 shell 所在环境**直接检查（不做交互选择，不修改系统），输出重点：
+脚本先完成镜像选择/拉取，再自动进入容器实例化流程。
 
-```
-════════════════════════════════════════════════════════════
-  【环境检查汇总报告】
-════════════════════════════════════════════════════════════
-  运行位置    : 宿主机 / 容器内
-  芯片型号    : 910B (910B)
-  识别来源    : npu-smi info
-  NPU 设备数  : 8
-  Python      : 3.10.13
-  CANN        : 8.1.RC1
-  安装目录    : /usr/local/Ascend/ascend-toolkit/latest
-  激活脚本    : /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
-  torch       : 2.1.0
-  torch_npu   : 2.1.0.post16
-────────────────────────────────────────────────────────────
-  ✅ 综合结论: 当前环境软件版本匹配, 可以继续算子开发。
-```
-
-兼容性判断要点：
-- `Python` ↔ `torch` 常见支持范围；
-- `torch` ↔ `torch_npu` 主版本是否同系列；
-- `芯片型号` ↔ `CANN` ↔ `torch_npu` 是否命中常见配套（910 系列 / 950 / 310P）。
-
-该脚本仅检查，**不修复、不安装、不自动写环境变量**。发现缺口时按需执行下面脚本：
-- 缺 CANN / 版本不符：进入 `b.install_cann` 选择版本安装（见 3.2），推荐 `a.cann-9.1.0`
-- 缺 torch/torch_npu：参考 `e.environment/e.setenvs/setenvs.sh` 中的 `install_torch`（当前内置支持 2.1.0 / 2.6.0）
-- 镜像 / 容器：见 3.3 / 3.4；进入容器后再次运行本脚本确认容器内版本也匹配。
-
-### 3.2 ② CANN toolkit 安装（下载 + 安装合并，仅 toolkit，可选择版本目录）
-
-进入 `b.install_cann` 后，按 `a` / `b` / `c` / `d` 选择版本；也可直接运行对应版本脚本：
-
-```bash
-# 推荐：9.1.0
-bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
-
-# 9.0.0
-bash d.ops_develop/b.install_cann/b.cann-9.0.0/run.sh
-
-# 旧芯片兼容
-bash d.ops_develop/b.install_cann/c.cann-8.2.RC1/run.sh
-bash d.ops_develop/b.install_cann/d.cann-8.1.RC1/run.sh
-```
-
-每个版本只安装 `Ascend-cann-toolkit_<version>_linux-<arch>.run`，不安装 kernels/ops、不安装合一包/驱动。
-
-- CPU 架构自动识别：`uname -m` → `lscpu` → `dpkg --print-architecture`，归一化为 `x86_64` 或 `aarch64`。
-- 安装目录防覆盖：默认建议版本化新目录；若目标目录已存在 CANN，默认拒绝覆盖，必须显式 `ITOOL_FORCE=1` 才允许继续。
-
-自动流程：查包/缺包询问下载 → 下载 toolkit → `.run --install --install-path=<安装目录>` → 自动 `source set_env.sh` → `python3 -c "import acl"` 验证 → 可选写入 `~/.bashrc`。
-
-常用非交互/自动化变量：
-
-```bash
-# 只检查官网 URL 是否可达, 不下载/不安装
-CHECK_ONLY=1 bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
-
-# 自动下载 + 自动安装
-ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1 bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
-
-# 指定安装目录 / 包目录
-INSTALL_DIR=/opt/Ascend PKG_DIR=/opt/cann_pkgs bash d.ops_develop/b.install_cann/b.cann-9.0.0/run.sh
-
-# 内网环境换源: 保留 __VER__ 占位符
-CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
-```
-
-> 当前已按官网资源探测可用的 toolkit 版本：`9.1.0`、`9.0.0`、`8.2.RC1`、`8.1.RC1`。
-
-### 3.3 ③ 镜像拉取 + 容器实例化（合并）
-
-```bash
-bash d.ops_develop/c.image_container/run.sh
-```
-
-该脚本先完成镜像选择/拉取，再自动进入容器实例化流程。
-
-**镜像阶段**：自动查询 `quay.io/ascend/cann` 全部 tag → 按 芯片/版本/系统/Python 筛选 → 编号列表选择：
+**镜像阶段**：自动查询 `quay.io/ascend/cann` tag → 按 芯片 / CANN / 系统 / Python 筛选 → 编号选择：
 
 ```
 按需筛选(直接回车=不限):
@@ -200,39 +132,91 @@ bash d.ops_develop/c.image_container/run.sh
   CANN 版本(如 8.1.rc1 / 9.0.0, 留空=全部) []:
   系统(如 ubuntu22.04 / openeuler22.03, 留空=全部) []:
   Python(如 py3.10 / py3.11, 留空=全部) []:
-
-════════ 匹配的镜像 tag (3) ════════
-    1) 8.1.rc1-910b-ubuntu22.04-py3.10
-    2) 8.1.rc1-910b-ubuntu24.04-py3.10
-    3) 9.0.0-910b-ubuntu22.04-py3.10
-────────────────────────────────────
-  选择编号 [3]:
 ```
 
-拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：
+拉取后自动打本地短标签。也可直接指定：
 
 ```bash
-IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash d.ops_develop/c.image_container/run.sh
+IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 \
+NAME=asc_dev WORK_DIR=/data/ops SHM_SIZE=16g \
+bash d.ops_develop/a.image_container/run.sh
 ```
 
-> 网络健壮性：脚本会依次尝试 quay.io 官方 API / Docker Registry v2 API 并自动重试；若都失败，会给出兜底选项——`[1] 重试` / `[2] 用内置常见 tag 列表` / `[3] 手动输入镜像`，无需手动排查。
+> 网络健壮性：优先 quay.io API / Registry v2 API 并重试；失败时可 `[1] 重试`、`[2] 内置常见 tag 列表`、`[3] 手动输入镜像`。
 
-**容器阶段**：收集容器名/工作目录/共享内存，自动枚举 `/dev/davinci*` 设备，生成 **`start_container.sh`** 并立即启动：
+**容器阶段**：收集容器名 / 工作目录 / 共享内存，枚举 `/dev/davinci*` 设备，生成 `start_container.sh` 并立即启动。宿主机工作目录挂载到容器 `/workspace`，后续容器内安装的 CANN 也放在这里，可持久保留。
 
-```
-容器名 [asc_dev]:
-工作目录(映射到容器 /workspace) [/data/ops]:
-共享内存(--shm-size, 如 16g) [16g]:
-✔ 已生成起容器脚本: /data/ops/start_container.sh
-```
+### 3.2 ② 容器内环境检查（只读，只给建议）
 
-改完直接 `bash start_container.sh` 即可重建容器；进入容器后重新执行环境检查（3.1）：
+启动容器后进入容器：
 
 ```bash
 docker exec -it asc_dev bash
-# 容器内执行:
-bash d.ops_develop/a.env_check/run.sh
 ```
+
+然后在容器内运行：
+
+```bash
+bash d.ops_develop/b.env_check/run.sh
+```
+
+脚本在**当前容器环境**检查：
+
+- 芯片型号：优先 `npu-smi info`，识别 910B / 910A / 910C / 950 / 310P 等。
+- 软件版本：`Python` ↔ `torch` ↔ `torch_npu` ↔ `CANN` ↔ 芯片型号。
+- CANN 安装目录和 `set_env.sh` 激活脚本。
+
+输出示例：
+
+```
+运行位置    : 容器内
+芯片型号    : 910B
+Python      : 3.10.13
+CANN        : 9.0.0
+安装目录    : /workspace/Ascend/ascend-toolkit-9.0.0
+激活脚本    : /workspace/Ascend/ascend-toolkit-9.0.0/set_env.sh
+torch       : 2.6.0
+torch_npu   : 2.6.0.post2
+
+✅ 综合结论: 当前环境软件版本匹配, 可以继续算子开发。
+```
+
+该脚本只提示，不执行：
+
+- 缺 CANN / 版本不符：提示进入 `c.install_cann` 选版本补装。
+- 缺 torch / torch_npu：提示参考 `e.environment/e.setenvs/setenvs.sh` 的 `install_torch`。
+- 检查通过：提示进入 `d.op_design`。
+
+### 3.3 ③ 按需安装/补装 CANN toolkit（容器内）
+
+> 仅当 3.2 的报告建议“安装/更换 CANN”时再执行；环境检查通过可跳过。
+
+```bash
+# 推荐 9.1.0
+bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh
+
+# 9.0.0
+bash d.ops_develop/c.install_cann/b.cann-9.0.0/run.sh
+```
+
+版本目录：
+
+| 目录 | CANN 版本 | 说明 |
+|---|---|---|
+| `a.cann-9.1.0/` | `9.1.0` | 推荐 |
+| `b.cann-9.0.0/` | `9.0.0` | 稳定 |
+| `c.cann-8.2.RC1/` | `8.2.RC1` | 旧芯片兼容 |
+| `d.cann-8.1.RC1/` | `8.1.RC1` | 旧芯片兼容 |
+
+容器内默认安装到：
+
+```text
+/workspace/Ascend/ascend-toolkit-<version>
+```
+
+`/workspace` 由 `a.image_container` 挂载宿主机工作目录，所以容器删除/重建后安装结果仍然保留。
+
+脚本自动识别 `x86_64` / `aarch64`，然后：查包/下载 toolkit → 安装 → `source set_env.sh` → `import acl` 验证。未进入容器直接运行会退出；宿主机只探测 URL 可加 `ITOOL_ALLOW_HOST=1 CHECK_ONLY=1`。
 
 ### 3.4 ④ 算子需求分析 → 生成 op.json
 
@@ -240,46 +224,32 @@ bash d.ops_develop/a.env_check/run.sh
 bash d.ops_develop/d.op_design/a.op_spec/run.sh
 ```
 
-交互示例（回车用默认值）：
+交互收集算子需求，生成：
 
-```
-算子名称 [AddCustom]: MatMulCustom
-算子类型(elementwise/matmul/reduce/custom) [custom]: matmul
-算子功能描述: 矩阵乘法 A x B
-支持数据类型(如 fp16,fp32,int8) [fp16,fp32]: fp16
-输入数量 [2]: 2
-  --- 输入 1 ---
-    名称 [x1]: A
-    数据类型 [fp16]: fp16
-    典型shape [ -1,-1 ]: 1024,1024
-  ...
-```
-
-生成 `op_design_MatMulCustom/op.json`（msopgen 格式）和 `op_spec.md`。
+- `op_design_<算子名>/op.json`
+- `op_spec.md`
 
 ### 3.5 ⑤ 生成算子工程 / 接入
 
 ```bash
-# 轻量: msopgen 生成 AscendC 工程
+# msopgen AscendC 工程
 bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh op_design_MatMulCustom/op.json
 
-# 完善: 拉取 ops-transformer 算子库(官方 gitcode)
+# ops-transformer 源码
 bash d.ops_develop/e.op_scaffold/b.ops_transformer/run.sh
 
-# 接入: torchbind(CPU + NPU) 工程
+# torchbind(CPU + NPU)
 bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh MatMulCustom
-# 产物: MatMulCustom.cpp / setup.py / MatMulCustom_npu.cpp / setup_npu.py / README.md
 ```
 
-编译：
+编译示例：
 
 ```bash
 cd torchbind_MatMulCustom
+source /workspace/Ascend/ascend-toolkit-9.1.0/set_env.sh
 python setup.py install          # CPU
-source /usr/local/Ascend/ascend-toolkit/set_env.sh
 python setup_npu.py install      # NPU
 ```
-
 ## 4. 常见问题
 
 | 现象 | 处理 |

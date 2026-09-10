@@ -1,8 +1,10 @@
 #!/bin/bash
 # ============================================================
-# ② CANN toolkit 9.0.0 安装 (下载 + 安装合并, 仅安装 toolkit)
+# ③ CANN toolkit 8.2.RC1 安装 (下载 + 安装合并, 仅安装 toolkit)
 #
 # 功能:
+#   默认在算子开发容器内执行；安装目录默认放到挂载目录 /workspace 下，
+#   容器重建后仍然保留。
 #   选择/指定一个主流稳定 CANN version → 自动找包或下载 toolkit → 安装
 #   → 自动 source set_env.sh 激活 → 验证 acl。
 #
@@ -12,7 +14,7 @@
 # 可用环境变量(非交互):
 #   CANN_VERSION=9.1.0
 #   ARCH=x86_64|aarch64
-#   INSTALL_DIR=/usr/local/Ascend/ascend-toolkit
+#   INSTALL_DIR=/workspace/Ascend/ascend-toolkit-<version>
 #   PKG_DIR=./cann_pkgs        # 优先从这个目录找包, 找不到时也可下载到这里
 #   CHECK_ONLY=1               # 只探测官方 URL 是否可达, 不下载/不安装
 #   ITOOL_AUTO_DL=1            # 缺包时自动下载, 不再询问
@@ -40,6 +42,7 @@ ask()    { # $1=提示 $2=默认值 => $REPLY
     [ -z "$REPLY" ] && REPLY="$def"
 }
 confirm(){ local ans; printf "  %s [y/N]: " "$1"; IFS= read -r ans || ans=""; case "$ans" in y|Y|yes|YES) return 0;; *) return 1;; esac; }
+inside_container() { [ -f /.dockerenv ] || grep -qE "docker|containerd|kubepods" /proc/1/cgroup 2>/dev/null; }
 
 # ---------- 参数 ----------
 detect_arch() {
@@ -77,12 +80,21 @@ INSTALL_DIR="${INSTALL_DIR:-}"
 PKG_DIR="${PKG_DIR:-}"
 QUIET="${QUIET:-0}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
-CANN_VERSION="${CANN_VERSION:-9.0.0}"
+CANN_VERSION="${CANN_VERSION:-8.2.RC1}"
 CANN_BASE_URL="${CANN_BASE_URL:-https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%20__VER__}"
+
+if ! inside_container && [ "${ITOOL_ALLOW_HOST:-0}" != "1" ]; then
+    echo -e "  ${RED}✖ 本步骤默认必须在算子开发容器内执行。${RESET}" >&2
+    echo "  → 请先运行: bash d.ops_develop/a.image_container/run.sh"
+    echo "  → 然后进入容器: docker exec -it <容器名> bash"
+    echo "  → 再执行本脚本。"
+    echo "  如仅在宿主机探测网络/URL, 请使用: ITOOL_ALLOW_HOST=1 CHECK_ONLY=1 bash $0"
+    exit 1
+fi
 
 echo ""
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "  ${WHITE}  ② CANN toolkit 安装 · 9.0.0 (仅 toolkit)${RESET}"
+echo -e "  ${WHITE}  ③ CANN toolkit 安装 · 8.2.RC1 (仅 toolkit)${RESET}"
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
 
 # ---------- 2. 组装包名 / URL ----------
@@ -163,7 +175,7 @@ else
     rc=$?
     if [ $rc -ne 0 ] || [ ! -s "$PKG_PATH" ]; then
         echo -e "${RED}下载失败(退出码 $rc)。${RESET}" >&2
-        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/b.install_cann/b.cann-9.0.0/run.sh" >&2
+        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/c.install_cann/c.cann-8.2.RC1/run.sh" >&2
         exit 1
     fi
 fi
@@ -173,14 +185,18 @@ has_cann_markers() {
     [ -f "$1/set_env.sh" ] || [ -f "$1/version.cfg" ] || [ -f "$1/version" ] || [ -f "$1/version.info" ] || [ -d "$1/latest" ]
 }
 
-DEFAULT_INSTALL_DIR="/usr/local/Ascend/ascend-toolkit-${CANN_VERSION}"
+if [ -d /workspace ]; then
+    DEFAULT_INSTALL_DIR="/workspace/Ascend/ascend-toolkit-${CANN_VERSION}"
+else
+    DEFAULT_INSTALL_DIR="/usr/local/Ascend/ascend-toolkit-${CANN_VERSION}"
+fi
 SAFE_INSTALL_DIR="$DEFAULT_INSTALL_DIR"
 while [ -e "$SAFE_INSTALL_DIR" ]; do SAFE_INSTALL_DIR="${SAFE_INSTALL_DIR}-new"; done
 
 if [ -z "$INSTALL_DIR" ]; then
     echo ""
     echo -e "  ${YELLOW}⚠ 为防止覆盖已有 CANN, 请提供安装目录。${RESET}"
-    for d in /usr/local/Ascend/ascend-toolkit /usr/local/Ascend/ascend-toolkit/latest /usr/local/Ascend; do
+    for d in /workspace/Ascend /workspace/Ascend/ascend-toolkit /usr/local/Ascend/ascend-toolkit /usr/local/Ascend/ascend-toolkit/latest /usr/local/Ascend; do
         if has_cann_markers "$d"; then
             echo -e "    ${YELLOW}[已检测到 CANN]${RESET} $d"
         fi
@@ -278,4 +294,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 镜像拉取 + 容器实例化 → bash d.ops_develop/c.image_container/run.sh"
+echo "下一步: 算子需求分析 → bash d.ops_develop/d.op_design/a.op_spec/run.sh"

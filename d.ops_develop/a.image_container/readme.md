@@ -1,11 +1,12 @@
-# c.image_container — 镜像拉取 + 容器实例化
+# a.image_container — 镜像拉取 + 容器实例化
 
-> 本目录合并了原来的 `b.pull_image` 和 `c.run_container`。
+> 本目录是算子开发工作流的第 1 步：先拉镜像、建容器。
+> 后续步骤默认在容器内执行。
 
 ## 功能
 
 ```bash
-bash d.ops_develop/c.image_container/run.sh
+bash d.ops_develop/a.image_container/run.sh
 ```
 
 脚本会依次完成：
@@ -22,5 +23,14 @@ bash d.ops_develop/c.image_container/run.sh
 ```bash
 IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 \
 NAME=asc_dev WORK_DIR=/data/ops SHM_SIZE=16g \
-bash d.ops_develop/c.image_container/run.sh
+bash d.ops_develop/a.image_container/run.sh
+```
+
+## 下一步
+
+容器启动后进入容器，再运行环境检查：
+
+```bash
+docker exec -it asc_dev bash
+bash d.ops_develop/b.env_check/run.sh
 ```

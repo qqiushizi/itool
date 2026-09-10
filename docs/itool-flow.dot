@@ -47,9 +47,9 @@ digraph itool {
     fontcolor="#57606a";
     fontsize=15;
 
-    S1 [label="① a.env_check\n环境检查(版本矩阵/芯片识别)", fillcolor="#dafbe1", color="#2da44e"];
-    S2 [label="② b.install_cann\nCANN toolkit 安装(下载+安装)", fillcolor="#dafbe1", color="#2da44e"];
-    S3 [label="③ c.image_container\n镜像拉取 + 容器实例化", fillcolor="#dafbe1", color="#2da44e"];
+    S1 [label="① a.image_container\n镜像拉取 + 容器实例化", fillcolor="#dafbe1", color="#2da44e"];
+    S2 [label="② b.env_check\n容器内环境检查(只读)", fillcolor="#dafbe1", color="#2da44e"];
+    S3 [label="③ c.install_cann\n按需安装/补装 CANN toolkit", fillcolor="#fff8c5", color="#d4a72c"];
     S4 [label="④ d.op_design\n需求分析 → op.json", fillcolor="#fff8c5", color="#d4a72c"];
     S5 [label="⑤ e.op_scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#fff8c5", color="#d4a72c"];
   }
@@ -60,5 +60,9 @@ digraph itool {
   T -> REPO;
   S -> REPO;
   REPO -> S1;
-  S1 -> S2 -> S3 -> S4 -> S5;
+  S1 -> S2;
+  S2 -> S3 [style=dashed, xlabel="如需补装"];
+  S3 -> S4 [style=dashed];
+  S2 -> S4 [xlabel="检查通过"];
+  S4 -> S5;
 }

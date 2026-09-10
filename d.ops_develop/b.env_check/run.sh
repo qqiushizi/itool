@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# ① 算子开发环境检查 (单脚本, 只读)
+# ② 算子开发环境检查 (单脚本, 只读)
 #
 # 用途:
 #   在“当前 shell 所在机器/容器”内检查算子开发所需软件版本是否匹配,
@@ -15,7 +15,7 @@
 #   5) 兼容性矩阵判断: Python ↔ torch ↔ torch_npu ↔ CANN ↔ 芯片
 #
 # 用法:
-#   bash d.ops_develop/a.env_check/run.sh
+#   bash d.ops_develop/b.env_check/run.sh
 #
 # 说明:
 #   - 纯 bash + 标准命令, 兼容 bash 3.2。
@@ -63,7 +63,7 @@ ver_ge() {
 
 echo ""
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "  ${WHITE}  ① 算子开发环境检查(单脚本, 宿主机/容器通用, 只读)${RESET}"
+echo -e "  ${WHITE}  ② 算子开发环境检查(单脚本, 宿主机/容器通用, 只读)${RESET}"
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
 
 # ============================================================
@@ -407,7 +407,7 @@ fi
 # 建议命令(只提示, 不自动执行)
 echo -e "  ${YELLOW}下一步建议(按需手动执行):${RESET}"
 if [ -z "$TOOLKIT_DIR" ]; then
-    echo -e "    → 安装/激活 CANN:   bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh"
+    echo -e "    → 安装/激活 CANN:   bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh"
 fi
 if [ -n "$SETENV" ]; then
     echo -e "    → 激活当前环境:     source $SETENV"

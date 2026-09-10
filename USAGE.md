@@ -236,7 +236,22 @@ bash d.ops_develop/c.install_cann/b.cann-9.0.0/run.sh
 bash d.ops_develop/d.op_design/a.op_spec/run.sh
 ```
 
-交互收集算子需求，生成：
+运行后可选：
+
+- `[1] 大模型分析`
+- `[2] 手动填写`
+
+大模型模式支持外部 API 和本地 vLLM，统走 OpenAI Chat Completions 协议：
+
+```bash
+# 本地 vLLM-ascend
+ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/a.op_spec/run.sh
+
+# 外部 API
+ITOOL_LLM_API_BASE=https://api.deepseek.com/v1 ITOOL_LLM_API_KEY=sk-xxxx ITOOL_LLM_MODEL=deepseek-chat bash d.ops_develop/d.op_design/a.op_spec/run.sh
+```
+
+生成：
 
 - `op_design_<算子名>/op.json`
 - `op_spec.md`

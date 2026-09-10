@@ -233,7 +233,7 @@ bash d.ops_develop/c.install_cann/b.cann-9.0.0/run.sh
 ### 3.4 ④ 算子需求分析 → 生成 op.json
 
 ```bash
-bash d.ops_develop/d.op_design/a.op_spec/run.sh
+bash d.ops_develop/d.op_design/a.analysis/run.sh
 ```
 
 运行后可选：
@@ -245,10 +245,10 @@ bash d.ops_develop/d.op_design/a.op_spec/run.sh
 
 ```bash
 # 昇腾宿主机上的 vLLM-ascend 服务
-ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/a.op_spec/run.sh
+ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/a.analysis/run.sh
 
 # 外部 API
-ITOOL_LLM_API_BASE=https://api.deepseek.com/v1 ITOOL_LLM_API_KEY=sk-xxxx ITOOL_LLM_MODEL=deepseek-chat bash d.ops_develop/d.op_design/a.op_spec/run.sh
+ITOOL_LLM_API_BASE=https://api.deepseek.com/v1 ITOOL_LLM_API_KEY=sk-xxxx ITOOL_LLM_MODEL=deepseek-chat bash d.ops_develop/d.op_design/a.analysis/run.sh
 ```
 
 生成：

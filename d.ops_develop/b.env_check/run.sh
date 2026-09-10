@@ -417,7 +417,7 @@ if [ "$TORCH_FOUND" = "0" ] || [ "$TORCH_NPU_FOUND" = "0" ]; then
 fi
 [ -n "$RECOMMEND_NOTE" ] && echo -e "    → 版本建议:         $RECOMMEND_NOTE"
 if [ "$MATRIX_OK" = "1" ]; then
-    echo -e "    → 需求分析:         bash d.ops_develop/d.op_design/a.op_spec/run.sh"
+    echo -e "    → 需求分析:         bash d.ops_develop/d.op_design/a.analysis/run.sh"
     echo -e "    → 生成工程:         bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh"
 fi
 echo ""

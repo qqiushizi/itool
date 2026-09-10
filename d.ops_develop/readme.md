@@ -2,29 +2,28 @@
 
 > 场景：在客户机器上开发昇腾算子，或基于已有算子源码做改造。
 > 输出形态：脚本 / 脚本文件夹（沿用 itool 约定：`字母.名称` 目录 + 叶子 `run.sh`）。
-> 全程按「环境准备 ①→⑤ → 需求分析 ⑥ → 脚手架 ⑦」推进，可单独执行任意一步。
+> 全程按「环境准备 ①→④ → 需求分析 ⑤ → 脚手架 ⑥」推进，可单独执行任意一步。
 
 ## 总览
 
 ```
 d.ops_develop/
-├── a.env_check/                       环境检查(宿主机 / 容器, 只读)
-│   ├── a.check_cann/       ① 服务器 CANN 检查(安装目录/版本/驱动/激活)
-│   └── b.check_container/⑤ 进容器检查软件包 → 确认可开始算子开发
+├── a.env_check/                       环境检查(宿主机 / 容器通用, 只读)
+│   └── a.check_env/run.sh   ① 环境检查(芯片型号识别 + 软件版本匹配矩阵)
 ├── b.env_setup/                       环境搭建(下载 / 安装 / 镜像 / 容器)
 │   ├── a.download_cann/      下载 CANN 包(toolkit / kernels / 合一包)
 │   ├── b.install_cann/     ② CANN 安装(安装方式/位置/source 激活)
 │   ├── c.pull_image/       ③ 镜像拉取(quay.io 可视化选 tag)
 │   └── d.run_container/    ④ 容器实例化(交互输入 + 生成可编辑起容器脚本)
-├── c.design/               ⑥ 算子设计需求分析 → op.json + op_spec.md
-└── d.scaffold/             ⑦ 算子脚手架(msopgen / ops-transformer / torchbind)
+├── c.design/               ⑤ 算子设计需求分析 → op.json + op_spec.md
+└── d.scaffold/             ⑥ 算子脚手架(msopgen / ops-transformer / torchbind)
 ```
 
 ## 快速开始
 
 ```bash
-# ① 服务器 CANN 检查(只读: 汇总安装目录/版本/驱动/激活状态/框架/编译链)
-bash d.ops_develop/a.env_check/a.check_cann/run.sh
+# ① 环境检查(只读: 识别 910/950/310 芯片, 检查 Python/CANN/torch/torch_npu 版本匹配)
+bash d.ops_develop/a.env_check/a.check_env/run.sh
 
 # (可选) 下载 CANN 包
 CANN_VERSION=8.1.RC1 CHIP=910b bash d.ops_develop/b.env_setup/a.download_cann/run.sh
@@ -39,13 +38,24 @@ bash d.ops_develop/b.env_setup/c.pull_image/run.sh
 # ④ 实例化容器(输入容器名等, 生成 start_container.sh 可自行修改)
 bash d.ops_develop/b.env_setup/d.run_container/run.sh
 
-# ⑤ 进容器检查软件包, 确认可开始算子开发
-bash d.ops_develop/a.env_check/b.check_container/run.sh asc_dev
+# 进入容器后建议再次运行同一个环境检查
+#   docker exec -it asc_dev bash
+#   bash d.ops_develop/a.env_check/a.check_env/run.sh
+
+# ⑤ 需求分析 → 生成 op.json / op_spec.md
+bash d.ops_develop/c.design/a.op_spec/run.sh
+
+# ⑥ 生成工程
+bash d.ops_develop/d.scaffold/a.msopgen/run.sh op.json   # msopgen 轻量
+bash d.ops_develop/d.scaffold/b.ops_transformer/run.sh   # ops-transformer 完善
+bash d.ops_develop/d.scaffold/c.torchbind/run.sh AddCustom
 ```
 
 ## 说明
 
 - 所有脚本尽量少依赖、纯 bash + 标准命令，面向昇腾客户机（Linux），兼容 bash 3.2。
+- `a.check_env` 合并了原来的「① 服务器 CANN 检查」与「⑤ 进容器检查软件包」，只在一个当前环境内做只读检查；宿主机和容器通用。
+- `a.check_env` 只保留环境版本匹配所需的项目：芯片型号、Python、CANN、torch、torch_npu，并输出兼容性矩阵结论；不做修复/安装，不扩展额外检查项。
 - 涉及网络下载/查询的脚本（CANN 包、quay 镜像）默认使用公开源，均可通过环境变量覆盖为内部镜像。
-- `a.env_check`(①/⑤) 只负责检查(只读)；`b.env_setup`(下载/②/③/④) 负责实际动作：下载、`.run` 安装(非 root 自动 `sudo`)、拉镜像、起容器。
+- `a.env_check` 只负责检查(只读)；`b.env_setup`(下载/②/③/④) 负责实际动作：下载、`.run` 安装(非 root 自动 `sudo`)、拉镜像、起容器。
 - `④` 会在工作目录生成 `start_container.sh`，客户可自行修改后反复使用。

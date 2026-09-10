@@ -47,13 +47,12 @@ digraph itool {
     fontcolor="#57606a";
     fontsize=15;
 
-    S1 [label="① a.check_cann\n服务器 CANN 检查", fillcolor="#dafbe1", color="#2da44e"];
+    S1 [label="① a.check_env\n环境检查(版本矩阵/芯片识别)", fillcolor="#dafbe1", color="#2da44e"];
     S2 [label="② b.install_cann\nCANN 安装 / source 激活", fillcolor="#dafbe1", color="#2da44e"];
     S3 [label="③ c.pull_image\nquay 可视化选 tag", fillcolor="#dafbe1", color="#2da44e"];
     S4 [label="④ d.run_container\n容器实例化 + 起容器脚本", fillcolor="#dafbe1", color="#2da44e"];
-    S5 [label="⑤ b.check_container\n进容器检查软件包", fillcolor="#dafbe1", color="#2da44e"];
-    S6 [label="⑥ c.design\n需求分析 → op.json", fillcolor="#dafbe1", color="#2da44e"];
-    S7 [label="⑦ d.scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#dafbe1", color="#2da44e"];
+    S5 [label="⑤ c.design\n需求分析 → op.json", fillcolor="#fff8c5", color="#d4a72c"];
+    S6 [label="⑥ d.scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#fff8c5", color="#d4a72c"];
   }
 
   // ===== 连线 =====
@@ -62,5 +61,5 @@ digraph itool {
   T -> REPO;
   S -> REPO;
   REPO -> S1;
-  S1 -> S2 -> S3 -> S4 -> S5 -> S6 -> S7;
+  S1 -> S2 -> S3 -> S4 -> S5 -> S6;
 }

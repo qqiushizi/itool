@@ -105,35 +105,43 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 
 ## 3. 算子开发工作流（d.ops_develop）
 
-面向：在客户机器上开发算子 / 基于算子源码改造。环境准备五步 ①→⑤ + 开发两步 ⑥→⑦，均可独立执行。
+面向：在客户机器上开发算子 / 基于算子源码改造。环境准备 ①→④ + 开发两步 ⑤→⑥，均可独立执行。环境检查已合并为单脚本，宿主机与容器通用。
 
-### 3.1 ① 服务器 CANN 检查（安装目录/版本/驱动/激活）
+### 3.1 ① 环境检查（单脚本：芯片型号 + 软件版本匹配矩阵）
 
 ```bash
-bash d.ops_develop/a.env_check/a.check_cann/run.sh
+bash d.ops_develop/a.env_check/a.check_env/run.sh
 ```
 
-汇总输出示例（检查主机/OS、驱动 HDK、CANN 安装目录、toolkit/kernels 版本、环境变量激活状态、Python/框架、Docker）：
+该脚本在**当前 shell 所在环境**直接检查（不做交互选择，不修改系统），输出重点：
 
 ```
-════════════════════════════════════════════════════
-  【汇总报告】
-════════════════════════════════════════════════════
-  安装目录    : /usr/local/Ascend/ascend-toolkit/latest
-  CANN 版本   : version=8.1.RC1
-  激活脚本    : /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
-  当前激活状态: 已找到 set_env.sh
-  驱动信息    : driver version = 25.0.1
+════════════════════════════════════════════════════════════
+  【环境检查汇总报告】
+════════════════════════════════════════════════════════════
+  运行位置    : 宿主机 / 容器内
+  芯片型号    : 910B (910B)
+  识别来源    : npu-smi info
   NPU 设备数  : 8
-────────────────────────────────────────────────────
-  下一步建议: 环境基本就绪 → ③ 拉取镜像 → ④ 起容器 → ⑤ 进容器检查
+  Python      : 3.10.13
+  CANN        : 8.1.RC1
+  安装目录    : /usr/local/Ascend/ascend-toolkit/latest
+  激活脚本    : /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
+  torch       : 2.1.0
+  torch_npu   : 2.1.0.post16
+────────────────────────────────────────────────────────────
+  ✅ 综合结论: 当前环境软件版本匹配, 可以继续算子开发。
 ```
 
-该脚本只负责检查，**不修改系统**。发现缺失项后，按需用下面的独立脚本处理：
+兼容性判断要点：
+- `Python` ↔ `torch` 常见支持范围；
+- `torch` ↔ `torch_npu` 主版本是否同系列；
+- `芯片型号` ↔ `CANN` ↔ `torch_npu` 是否命中常见配套（910 系列 / 950 / 310P）。
 
-- 缺 CANN：`bash d.ops_develop/b.env_setup/b.install_cann/run.sh`（见 3.3）
-- 已装但未激活：`source /usr/local/Ascend/ascend-toolkit/set_env.sh`
-- 拉镜像 / 起容器 / 进容器检查：分别见 3.4 / 3.5 / 3.6
+该脚本仅检查，**不修复、不安装、不自动写环境变量**。发现缺口时按需执行下面脚本：
+- 缺 CANN / 版本不符：`bash d.ops_develop/b.env_setup/b.install_cann/run.sh`（见 3.3）
+- 缺 torch/torch_npu：参考 `e.environment/e.setenvs/setenvs.sh` 中的 `install_torch`（当前内置支持 2.1.0 / 2.6.0）
+- 镜像 / 容器：见 3.4 / 3.5；进入容器后再次运行本脚本确认容器内版本也匹配。
 
 ### 3.2 下载 CANN 包（可选，先探测再下载）
 
@@ -216,25 +224,15 @@ bash d.ops_develop/b.env_setup/d.run_container/run.sh
 ✔ 已生成起容器脚本: /data/ops/start_container.sh
 ```
 
-改完直接 `bash start_container.sh` 即可重建容器；进入：`docker exec -it asc_dev bash`。
-
-### 3.6 ⑤ 进容器检查软件包 → 确认可开始算子开发
+改完直接 `bash start_container.sh` 即可重建容器；进入容器后重新执行同一个环境检查（3.1）确认版本：
 
 ```bash
-bash d.ops_develop/a.env_check/b.check_container/run.sh asc_dev
+docker exec -it asc_dev bash
+# 容器内执行:
+bash d.ops_develop/a.env_check/a.check_env/run.sh
 ```
 
-在容器内检查 CANN/torch/torch_npu/编译链/NPU 设备，并给出结论：
-
-```
-===== 6. 结论 =====
-  ✅ GO: 容器内软件包齐全, 可以开始算子开发。
-  建议下一步:
-    · 算子需求分析:  bash d.ops_develop/c.design/a.op_spec/run.sh
-    · 生成工程:      bash d.ops_develop/d.scaffold/a.msopgen/run.sh
-```
-
-### 3.7 ⑥ 算子需求分析 → 生成 op.json
+### 3.6 ⑤ 算子需求分析 → 生成 op.json
 
 ```bash
 bash d.ops_develop/c.design/a.op_spec/run.sh
@@ -257,7 +255,7 @@ bash d.ops_develop/c.design/a.op_spec/run.sh
 
 生成 `op_design_MatMulCustom/op.json`（msopgen 格式）和 `op_spec.md`。
 
-### 3.8 ⑦ 生成算子工程 / 接入
+### 3.7 ⑥ 生成算子工程 / 接入
 
 ```bash
 # 轻量: msopgen 生成 AscendC 工程
@@ -279,8 +277,6 @@ python setup.py install          # CPU
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 python setup_npu.py install      # NPU
 ```
-
----
 
 ## 4. 常见问题
 

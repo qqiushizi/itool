@@ -155,15 +155,15 @@ bash d.ops_develop/a.env_check/a.check_cann/run.sh
 ```bash
 # 只探测 URL 是否可达(不下载大包)
 CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 CHECK_ONLY=1 \
-  bash d.ops_develop/a.env_check/b.download_cann/run.sh
+  bash d.ops_develop/b.env_setup/a.download_cann/run.sh
 
 # 正式下载(默认 toolkit + kernels, 支持断点续传)
 CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 \
-  bash d.ops_develop/a.env_check/b.download_cann/run.sh
+  bash d.ops_develop/b.env_setup/a.download_cann/run.sh
 
 # 仅 toolkit / 合一包
-MODE=toolkit  CANN_VERSION=8.1.RC1 bash d.ops_develop/a.env_check/b.download_cann/run.sh
-MODE=combined CANN_VERSION=8.1.RC1 bash d.ops_develop/a.env_check/b.download_cann/run.sh
+MODE=toolkit  CANN_VERSION=8.1.RC1 bash d.ops_develop/b.env_setup/a.download_cann/run.sh
+MODE=combined CANN_VERSION=8.1.RC1 bash d.ops_develop/b.env_setup/a.download_cann/run.sh
 ```
 
 内网环境可换源：`CANN_BASE_URL=https://内网镜像/CANN/...`。
@@ -171,7 +171,7 @@ MODE=combined CANN_VERSION=8.1.RC1 bash d.ops_develop/a.env_check/b.download_can
 ### 3.3 ② CANN 安装（交互：方式 / 位置 / source 激活）
 
 ```bash
-bash d.ops_develop/a.env_check/c.install_cann/run.sh
+bash d.ops_develop/b.env_setup/b.install_cann/run.sh
 ```
 
 交互选择：
@@ -191,7 +191,7 @@ CANN 版本 [8.1.RC1]:
 ### 3.4 ③ 镜像拉取（quay.io 可视化选 tag）
 
 ```bash
-bash d.ops_develop/b.env_setup/a.pull_image/run.sh
+bash d.ops_develop/b.env_setup/c.pull_image/run.sh
 ```
 
 交互流程：自动查询 `quay.io/ascend/cann` 全部 tag → 按 芯片/版本/系统/Python 筛选 → 编号列表选择：
@@ -211,14 +211,14 @@ bash d.ops_develop/b.env_setup/a.pull_image/run.sh
   选择编号 [3]:
 ```
 
-拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：`IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash .../a.pull_image/run.sh`。
+拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：`IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash .../c.pull_image/run.sh`。
 
 > 网络健壮性：脚本会依次尝试 quay.io 官方 API / Docker Registry v2 API 并自动重试；若都失败，会给出兜底选项——`[1] 重试` / `[2] 用内置常见 tag 列表` / `[3] 手动输入镜像`，无需手动排查。
 
 ### 3.5 ④ 容器实例化（交互 + 生成可编辑起容器脚本）
 
 ```bash
-bash d.ops_develop/b.env_setup/b.run_container/run.sh
+bash d.ops_develop/b.env_setup/d.run_container/run.sh
 ```
 
 交互收集镜像/容器名/工作目录/共享内存，自动枚举 `/dev/davinci*` 设备，并生成 **`start_container.sh`**（客户可自行修改后重复执行），随后立即启动容器：
@@ -236,7 +236,7 @@ bash d.ops_develop/b.env_setup/b.run_container/run.sh
 ### 3.6 ⑤ 进容器检查软件包 → 确认可开始算子开发
 
 ```bash
-bash d.ops_develop/b.env_setup/c.check_in_container/run.sh asc_dev
+bash d.ops_develop/a.env_check/b.check_in_container/run.sh asc_dev
 ```
 
 在容器内检查 CANN/torch/torch_npu/编译链/NPU 设备，并给出结论：

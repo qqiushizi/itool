@@ -260,4 +260,4 @@ echo -e "${GREEN}✔ 镜像已就绪:${RESET}"
 docker images | grep -E "ascend/cann|cann-" | sed 's/^/  /'
 echo ""
 echo "下一步实例化容器:"
-echo "  bash d.ops_develop/b.env_setup/b.run_container/run.sh cann-${LOCAL_TAG}"
+echo "  bash d.ops_develop/b.env_setup/d.run_container/run.sh cann-${LOCAL_TAG}"

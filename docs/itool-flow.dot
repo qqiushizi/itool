@@ -1,5 +1,5 @@
 // itool 项目流程图 (Graphviz DOT)
-// 与 README.md 中的 Mermaid 流程图保持一致, 用于生成 docs/itool-flow.png
+// 算子开发 ①→⑦ 流程图, 用于生成 docs/itool-flow.png
 // 重新生成:  dot -Tpng -Gdpi=120 docs/itool-flow.dot -o docs/itool-flow.png
 digraph itool {
   graph [
@@ -48,10 +48,10 @@ digraph itool {
     fontsize=15;
 
     S1 [label="① a.check_cann\n服务器 CANN 检查", fillcolor="#dafbe1", color="#2da44e"];
-    S2 [label="② c.install_cann\nCANN 安装 / source 激活", fillcolor="#dafbe1", color="#2da44e"];
-    S3 [label="③ a.pull_image\nquay 可视化选 tag", fillcolor="#dafbe1", color="#2da44e"];
-    S4 [label="④ b.run_container\n容器实例化 + 起容器脚本", fillcolor="#dafbe1", color="#2da44e"];
-    S5 [label="⑤ c.check_in_container\n进容器检查软件包", fillcolor="#dafbe1", color="#2da44e"];
+    S2 [label="② b.install_cann\nCANN 安装 / source 激活", fillcolor="#dafbe1", color="#2da44e"];
+    S3 [label="③ c.pull_image\nquay 可视化选 tag", fillcolor="#dafbe1", color="#2da44e"];
+    S4 [label="④ d.run_container\n容器实例化 + 起容器脚本", fillcolor="#dafbe1", color="#2da44e"];
+    S5 [label="⑤ b.check_in_container\n进容器检查软件包", fillcolor="#dafbe1", color="#2da44e"];
     S6 [label="⑥ c.design\n需求分析 → op.json", fillcolor="#dafbe1", color="#2da44e"];
     S7 [label="⑦ d.scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#dafbe1", color="#2da44e"];
   }

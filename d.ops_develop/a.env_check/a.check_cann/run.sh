@@ -296,7 +296,7 @@ NEEDED=$(( MISS_TOOLKIT + MISS_SETENV + MISS_ACL + MISS_TORCH + MISS_TORCH_NPU +
 
 if [ "$NEEDED" -eq 0 ]; then
     echo -e "  ${GREEN}✅ 环境完整, 无需修复, 可以开始算子开发。${RESET}"
-    echo -e "    下一步: ③ 拉取镜像 → bash d.ops_develop/b.env_setup/a.pull_image/run.sh"
+    echo -e "    下一步: ③ 拉取镜像 → bash d.ops_develop/b.env_setup/c.pull_image/run.sh"
     exit 0
 fi
 
@@ -350,5 +350,5 @@ echo ""
 echo -e "  ${CYAN}════════════════════════════════════════════════════${RESET}"
 echo -e "  ${GREEN}检查与修复流程结束。${RESET}"
 [ -n "$SETENV" ] && echo -e "  激活环境: ${WHITE}source $SETENV${RESET}  或  source \$PWD/activate_cann.sh"
-echo -e "  下一步: ③ 拉取镜像 → bash d.ops_develop/b.env_setup/a.pull_image/run.sh"
+echo -e "  下一步: ③ 拉取镜像 → bash d.ops_develop/b.env_setup/c.pull_image/run.sh"
 echo ""

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# 下载 CANN 包 (供 c.install_cann 安装使用)
+# 下载 CANN 包 (供 b.install_cann 安装使用)
 # 用法:
 #   CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 bash run.sh           # 默认: toolkit + kernels
 #   MODE=toolkit  ... bash run.sh                                    # 仅 toolkit
@@ -96,5 +96,5 @@ echo ""
 echo -e "\033[0;32m下载完成, 产物在 $OUT_DIR\033[0m"
 ls -lh "$OUT_DIR"
 echo ""
-echo "下一步安装(见 a.env_check/c.install_cann):"
-echo "  bash d.ops_develop/a.env_check/c.install_cann/run.sh"
+echo "下一步安装(见 b.env_setup/b.install_cann):"
+echo "  bash d.ops_develop/b.env_setup/b.install_cann/run.sh"

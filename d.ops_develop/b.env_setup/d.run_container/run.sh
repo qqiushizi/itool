@@ -139,4 +139,4 @@ else
 fi
 
 echo ""
-echo -e "  ${CYAN}下一步:${RESET} 进入容器检查软件包 → bash d.ops_develop/b.env_setup/c.check_in_container/run.sh $NAME"
+echo -e "  ${CYAN}下一步:${RESET} 进入容器检查软件包 → bash d.ops_develop/a.env_check/b.check_in_container/run.sh $NAME"

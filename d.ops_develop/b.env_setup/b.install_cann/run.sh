@@ -130,7 +130,7 @@ if [ "$NEED_DL" = "1" ]; then
     mkdir -p "$PKG_DIR"
     if [ -z "${ITOOL_AUTO_DL:-}" ]; then
         echo ""
-        confirm "未找到全部安装包, 是否自动下载到 $PKG_DIR ?" || { echo -e "${RED}已取消。可先运行 b.download_cann 下载, 或用 PKG_DIR= 指定包目录。${RESET}" >&2; exit 1; }
+        confirm "未找到全部安装包, 是否自动下载到 $PKG_DIR ?" || { echo -e "${RED}已取消。可先运行 a.download_cann 下载, 或用 PKG_DIR= 指定包目录。${RESET}" >&2; exit 1; }
     fi
     BASE="${CANN_BASE_URL//__VER__/${CANN_VERSION}}"
     for ((i=0; i<${#PKGS[@]}; i++)); do
@@ -241,4 +241,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 拉取镜像 → bash d.ops_develop/b.env_setup/a.pull_image/run.sh"
+echo "下一步: 拉取镜像 → bash d.ops_develop/b.env_setup/c.pull_image/run.sh"

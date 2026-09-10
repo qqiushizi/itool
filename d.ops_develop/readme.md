@@ -12,10 +12,9 @@ d.ops_develop/
 │   ├── run.sh   ① 环境检查(芯片型号识别 + 软件版本匹配矩阵)
 │   └── readme.md      功能说明
 ├── b.env_setup/                       环境搭建(下载 / 安装 / 镜像 / 容器)
-│   ├── a.download_cann/      下载 CANN 包(toolkit / kernels / 合一包)
-│   ├── b.install_cann/     ② CANN 安装(安装方式/位置/source 激活)
-│   ├── c.pull_image/       ③ 镜像拉取(quay.io 可视化选 tag)
-│   └── d.run_container/    ④ 容器实例化(交互输入 + 生成可编辑起容器脚本)
+│   ├── a.install_cann/     ② CANN toolkit 安装(下载+安装合并, 仅 toolkit)
+│   ├── b.pull_image/       ③ 镜像拉取(quay.io 可视化选 tag)
+│   └── c.run_container/    ④ 容器实例化(交互输入 + 生成可编辑起容器脚本)
 ├── c.design/               ⑤ 算子设计需求分析 → op.json + op_spec.md
 └── d.scaffold/             ⑥ 算子脚手架(msopgen / ops-transformer / torchbind)
 ```
@@ -26,18 +25,14 @@ d.ops_develop/
 # ① 环境检查(只读: 识别 910/950/310 芯片, 检查 Python/CANN/torch/torch_npu 版本匹配)
 bash d.ops_develop/a.env_check/run.sh
 
-# (可选) 下载 CANN 包
-CANN_VERSION=8.1.RC1 CHIP=910b bash d.ops_develop/b.env_setup/a.download_cann/run.sh
-MODE=combined  CANN_VERSION=8.1.RC1 bash d.ops_develop/b.env_setup/a.download_cann/run.sh   # 合一包
-
-# ② 交互式安装 CANN(选择方式/位置/自动 source 激活)
-bash d.ops_develop/b.env_setup/b.install_cann/run.sh
+# ② CANN toolkit 安装(选择版本, 下载+安装一步完成, 仅 toolkit)
+bash d.ops_develop/b.env_setup/a.install_cann/run.sh
 
 # ③ 拉镜像(可视化选择 tag)
-bash d.ops_develop/b.env_setup/c.pull_image/run.sh
+bash d.ops_develop/b.env_setup/b.pull_image/run.sh
 
 # ④ 实例化容器(输入容器名等, 生成 start_container.sh 可自行修改)
-bash d.ops_develop/b.env_setup/d.run_container/run.sh
+bash d.ops_develop/b.env_setup/c.run_container/run.sh
 
 # 进入容器后建议再次运行同一个环境检查
 #   docker exec -it asc_dev bash

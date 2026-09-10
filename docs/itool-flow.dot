@@ -48,9 +48,9 @@ digraph itool {
     fontsize=15;
 
     S1 [label="① a.env_check\n环境检查(版本矩阵/芯片识别)", fillcolor="#dafbe1", color="#2da44e"];
-    S2 [label="② b.install_cann\nCANN 安装 / source 激活", fillcolor="#dafbe1", color="#2da44e"];
-    S3 [label="③ c.pull_image\nquay 可视化选 tag", fillcolor="#dafbe1", color="#2da44e"];
-    S4 [label="④ d.run_container\n容器实例化 + 起容器脚本", fillcolor="#dafbe1", color="#2da44e"];
+    S2 [label="② a.install_cann\nCANN toolkit 安装(下载+安装)", fillcolor="#dafbe1", color="#2da44e"];
+    S3 [label="③ b.pull_image\nquay 可视化选 tag", fillcolor="#dafbe1", color="#2da44e"];
+    S4 [label="④ c.run_container\n容器实例化 + 起容器脚本", fillcolor="#dafbe1", color="#2da44e"];
     S5 [label="⑤ c.design\n需求分析 → op.json", fillcolor="#fff8c5", color="#d4a72c"];
     S6 [label="⑥ d.scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#fff8c5", color="#d4a72c"];
   }

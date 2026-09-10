@@ -407,7 +407,7 @@ fi
 # 建议命令(只提示, 不自动执行)
 echo -e "  ${YELLOW}下一步建议(按需手动执行):${RESET}"
 if [ -z "$TOOLKIT_DIR" ]; then
-    echo -e "    → 安装/激活 CANN:   bash d.ops_develop/b.env_setup/b.install_cann/run.sh"
+    echo -e "    → 安装/激活 CANN:   bash d.ops_develop/b.env_setup/a.install_cann/run.sh"
 fi
 if [ -n "$SETENV" ]; then
     echo -e "    → 激活当前环境:     source $SETENV"

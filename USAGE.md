@@ -139,52 +139,51 @@ bash d.ops_develop/a.env_check/run.sh
 - `芯片型号` ↔ `CANN` ↔ `torch_npu` 是否命中常见配套（910 系列 / 950 / 310P）。
 
 该脚本仅检查，**不修复、不安装、不自动写环境变量**。发现缺口时按需执行下面脚本：
-- 缺 CANN / 版本不符：`bash d.ops_develop/b.env_setup/b.install_cann/run.sh`（见 3.3）
+- 缺 CANN / 版本不符：`bash d.ops_develop/b.env_setup/a.install_cann/run.sh`（见 3.2）
 - 缺 torch/torch_npu：参考 `e.environment/e.setenvs/setenvs.sh` 中的 `install_torch`（当前内置支持 2.1.0 / 2.6.0）
-- 镜像 / 容器：见 3.4 / 3.5；进入容器后再次运行本脚本确认容器内版本也匹配。
+- 镜像 / 容器：见 3.3 / 3.4；进入容器后再次运行本脚本确认容器内版本也匹配。
 
-### 3.2 下载 CANN 包（可选，先探测再下载）
-
-```bash
-# 只探测 URL 是否可达(不下载大包)
-CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 CHECK_ONLY=1 \
-  bash d.ops_develop/b.env_setup/a.download_cann/run.sh
-
-# 正式下载(默认 toolkit + kernels, 支持断点续传)
-CANN_VERSION=8.1.RC1 CHIP=910b ARCH=x86_64 \
-  bash d.ops_develop/b.env_setup/a.download_cann/run.sh
-
-# 仅 toolkit / 合一包
-MODE=toolkit  CANN_VERSION=8.1.RC1 bash d.ops_develop/b.env_setup/a.download_cann/run.sh
-MODE=combined CANN_VERSION=8.1.RC1 bash d.ops_develop/b.env_setup/a.download_cann/run.sh
-```
-
-内网环境可换源：`CANN_BASE_URL=https://内网镜像/CANN/...`。
-
-### 3.3 ② CANN 安装（交互：方式 / 位置 / source 激活）
+### 3.2 ② CANN toolkit 安装（下载 + 安装合并，仅 toolkit）
 
 ```bash
-bash d.ops_develop/b.env_setup/b.install_cann/run.sh
+bash d.ops_develop/b.env_setup/a.install_cann/run.sh
 ```
 
-交互选择：
+交互示例：
 
 ```
-请选择安装方式:
-  1) toolkit + kernels(ops)   [算子开发推荐]
-  2) 仅 toolkit
-  3) 合一包 (驱动 + toolkit + 其他, 单个 .run)
+请选择 CANN toolkit 版本:
+  1) 9.1.0   [默认/推荐]
+  2) 9.0.0
+  3) 8.2.RC1 [旧芯片兼容]
+  4) 8.1.RC1 [旧芯片兼容]
 选择 [1]:
-CANN 版本 [8.1.RC1]:
 安装位置 [/usr/local/Ascend/ascend-toolkit]:
 ```
 
-脚本会：定位/自动下载安装包 → 执行 `.run` 安装(非 root 自动加 sudo) → `source <安装目录>/set_env.sh` 激活 → `python3 -c "import acl"` 验证 → 可选写入 `~/.bashrc` 永久激活。
+本脚本只安装 `Ascend-cann-toolkit_<version>_linux-<arch>.run`，不安装 kernels/ops、不安装合一包/驱动。
 
-### 3.4 ③ 镜像拉取（quay.io 可视化选 tag）
+自动流程：查包/缺包询问下载 → 下载 toolkit → `.run --install --install-path=<安装目录>` → 自动 `source set_env.sh` → `python3 -c "import acl"` 验证 → 可选写入 `~/.bashrc`。
+
+非交互/自动化常用变量：
 
 ```bash
-bash d.ops_develop/b.env_setup/c.pull_image/run.sh
+# 只检查官网 URL 是否可达, 不下载/不安装
+CANN_VERSION=9.1.0 CHECK_ONLY=1 bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+
+# 指定版本静默安装
+CANN_VERSION=9.1.0 QUIET=1 ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1   bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+
+# 内网环境换源: 保留 __VER__ 占位符
+CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+```
+
+> 当前已按官网资源探测可用的 toolkit 版本：`9.1.0`、`9.0.0`、`8.2.RC1`、`8.1.RC1`。
+
+### 3.3 ③ 镜像拉取（quay.io 可视化选 tag）
+
+```bash
+bash d.ops_develop/b.env_setup/b.pull_image/run.sh
 ```
 
 交互流程：自动查询 `quay.io/ascend/cann` 全部 tag → 按 芯片/版本/系统/Python 筛选 → 编号列表选择：
@@ -204,14 +203,14 @@ bash d.ops_develop/b.env_setup/c.pull_image/run.sh
   选择编号 [3]:
 ```
 
-拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：`IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash .../c.pull_image/run.sh`。
+拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：`IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash d.ops_develop/b.env_setup/b.pull_image/run.sh`。
 
 > 网络健壮性：脚本会依次尝试 quay.io 官方 API / Docker Registry v2 API 并自动重试；若都失败，会给出兜底选项——`[1] 重试` / `[2] 用内置常见 tag 列表` / `[3] 手动输入镜像`，无需手动排查。
 
-### 3.5 ④ 容器实例化（交互 + 生成可编辑起容器脚本）
+### 3.4 ④ 容器实例化（交互 + 生成可编辑起容器脚本）
 
 ```bash
-bash d.ops_develop/b.env_setup/d.run_container/run.sh
+bash d.ops_develop/b.env_setup/c.run_container/run.sh
 ```
 
 交互收集镜像/容器名/工作目录/共享内存，自动枚举 `/dev/davinci*` 设备，并生成 **`start_container.sh`**（客户可自行修改后重复执行），随后立即启动容器：
@@ -232,7 +231,7 @@ docker exec -it asc_dev bash
 bash d.ops_develop/a.env_check/run.sh
 ```
 
-### 3.6 ⑤ 算子需求分析 → 生成 op.json
+### 3.5 ⑤ 算子需求分析 → 生成 op.json
 
 ```bash
 bash d.ops_develop/c.design/a.op_spec/run.sh
@@ -255,7 +254,7 @@ bash d.ops_develop/c.design/a.op_spec/run.sh
 
 生成 `op_design_MatMulCustom/op.json`（msopgen 格式）和 `op_spec.md`。
 
-### 3.7 ⑥ 生成算子工程 / 接入
+### 3.6 ⑥ 生成算子工程 / 接入
 
 ```bash
 # 轻量: msopgen 生成 AscendC 工程

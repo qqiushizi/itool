@@ -129,26 +129,11 @@ bash d.ops_develop/a.env_check/a.check_cann/run.sh
   下一步建议: 环境基本就绪 → ③ 拉取镜像 → ④ 起容器 → ⑤ 进容器检查
 ```
 
-检查完会自动进入**一键修复向导**，按检测到的缺失项列出可选方案，你只需选编号（或 `A` 全部）：
+该脚本只负责检查，**不修改系统**。发现缺失项后，按需用下面的独立脚本处理：
 
-```
-════════════════════════════════════════════════════
-  【可选修复方案】(选择编号执行, 无需手动检查)
-════════════════════════════════════════════════════
-    [1] 安装 CANN (当前缺失)
-    [2] 生成/激活 CANN 环境脚本 activate_cann.sh
-    [3] 安装 torch + torch_npu
-    [4] 安装 pybind11
-    [5] 安装编译工具链 gcc/cmake
-    [6] Docker 安装指引
-    [A] 一键修复以上全部缺失项
-    [0] 跳过(仅查看)
-
-  请选择方案 [A]:
-```
-
-- 选 `A`：按顺序自动补齐所有缺失项
-- 选 `2`：生成 `activate_cann.sh`（内容即 `source <set_env.sh>`），可写入 `~/.bashrc` 永久激活，也可手动 `source activate_cann.sh`
+- 缺 CANN：`bash d.ops_develop/b.env_setup/b.install_cann/run.sh`（见 3.3）
+- 已装但未激活：`source /usr/local/Ascend/ascend-toolkit/set_env.sh`
+- 拉镜像 / 起容器 / 进容器检查：分别见 3.4 / 3.5 / 3.6
 
 ### 3.2 下载 CANN 包（可选，先探测再下载）
 

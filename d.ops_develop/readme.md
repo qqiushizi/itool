@@ -23,7 +23,7 @@ d.ops_develop/
 ## 快速开始
 
 ```bash
-# ① 服务器 CANN 检查(汇总报告) → 自动给出方案, 选择编号一键修复(含生成 activate_cann.sh)
+# ① 服务器 CANN 检查(只读: 汇总安装目录/版本/驱动/激活状态/框架/编译链)
 bash d.ops_develop/a.env_check/a.check_cann/run.sh
 
 # (可选) 下载 CANN 包
@@ -47,5 +47,5 @@ bash d.ops_develop/a.env_check/b.check_in_container/run.sh asc_dev
 
 - 所有脚本尽量少依赖、纯 bash + 标准命令，面向昇腾客户机（Linux），兼容 bash 3.2。
 - 涉及网络下载/查询的脚本（CANN 包、quay 镜像）默认使用公开源，均可通过环境变量覆盖为内部镜像。
-- `a.env_check`(①/⑤) 为只读检查 + 一键修复；`b.env_setup`(下载/②/③/④) 会实际执行下载、`.run` 安装(非 root 自动 `sudo`)、拉镜像、起容器等动作。
+- `a.env_check`(①/⑤) 只负责检查(只读)；`b.env_setup`(下载/②/③/④) 负责实际动作：下载、`.run` 安装(非 root 自动 `sudo`)、拉镜像、起容器。
 - `④` 会在工作目录生成 `start_container.sh`，客户可自行修改后反复使用。

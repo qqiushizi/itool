@@ -113,7 +113,7 @@ d.ops_develop/
 │   ├── d.cann-8.1.RC1/run.sh          8.1.RC1 (旧芯片兼容)
 │   └── readme.md                      版本说明 + 容器内安装要求
 ├── d.op_design/                       ④ 算子设计需求分析
-│   ├── run.sh                  大模型分析 / 手动填写 → op.json + op_spec.md
+│   ├── run.sh                  本地/外部 LLM / 手动填写 → op.json + op_spec.md
 │   └── readme.md              功能说明
 └── e.op_scaffold/                     ⑤ 算子脚手架
     ├── a.msopgen/run.sh               msopgen 生成 AscendC 工程
@@ -136,7 +136,7 @@ bash d.ops_develop/b.env_check/run.sh
 # ③ 若检查报告提示“安装/更换 CANN”, 再按需执行
 bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh
 
-# ④ 需求分析(大模型分析 / 手动填写) → 生成 op.json / op_spec.md
+# ④ 需求分析(本地/外部 LLM / 手动填写) → 生成 op.json / op_spec.md
 bash d.ops_develop/d.op_design/run.sh
 
 # ⑤ 生成工程

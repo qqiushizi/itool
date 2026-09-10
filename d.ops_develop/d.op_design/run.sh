@@ -3,13 +3,15 @@
 # 算子设计 / 需求分析 (支持大模型分析与手动填写)
 #
 # 模式:
-#   [1] 大模型分析: 兼容外部 API / 昇腾宿主机上已启动的 vLLM 服务
-#   [2] 手动填写:   保留原交互式人工定义流程
+#   [1] 本地大模型: 昇腾宿主机/容器内 vLLM-ascend 服务
+#   [2] 外部 API:   OpenAI Chat Completions 兼容接口
+#   [3] 手动填写:   保留原交互式人工定义流程
 #
 # 大模型模式环境变量:
-#   OP_SPEC_MODE=llm|manual        # 跳过交互选择, 直接进入指定模式
+#   OP_SPEC_MODE=llm|manual        # 跳过分析方式选择
+#   LLM_PROVIDER=local|external    # OP_SPEC_MODE=llm 时, 跳过接入方式选择
 #   OP_DESC_LLM="..."              # 大模型模式: 算子需求描述
-#   ITOOL_LLM_API_BASE=...         # 默认 http://127.0.0.1:8000/v1
+#   ITOOL_LLM_API_BASE=...         # 本地默认 http://127.0.0.1:8000/v1; 外部默认 https://api.deepseek.com/v1
 #   ITOOL_LLM_API_KEY=...          # 外部 API 使用; 宿主机 vLLM 服务可留空
 #   ITOOL_LLM_MODEL=...            # vLLM served model name 或外部模型名
 #   ITOOL_LLM_TIMEOUT=...          # 默认 120s
@@ -186,17 +188,34 @@ echo -e "  ${CYAN}===== 算子设计 / 需求分析 =====${RESET}"
 echo ""
 
 MODE="${OP_SPEC_MODE:-}"
+PROVIDER="${LLM_PROVIDER:-}"
+
 if [ -z "$MODE" ]; then
     echo -e "  ${WHITE}请选择分析方式:${RESET}"
-    echo "    [1] 大模型分析"
-    echo "    [2] 手动填写"
+    echo "    [1] 本地大模型 (昇腾宿主机/容器内 vLLM-ascend 服务)"
+    echo "    [2] 外部 API (OpenAI Chat Completions 兼容接口)"
+    echo "    [3] 手动填写"
     printf "  请选择 [1]: "
     IFS= read -r ans || ans=""
     ans="${ans:-1}"
     case "$ans" in
-        2) MODE="manual" ;;
-        *) MODE="llm" ;;
+        2) MODE="llm"; PROVIDER="external" ;;
+        3) MODE="manual" ;;
+        *) MODE="llm"; PROVIDER="local" ;;
     esac
+elif [ "$MODE" = "llm" ]; then
+    if [ -z "$PROVIDER" ]; then
+        echo -e "  ${WHITE}请选择大模型接入方式:${RESET}"
+        echo "    [1] 本地大模型 (昇腾宿主机/容器内 vLLM-ascend 服务)"
+        echo "    [2] 外部 API (OpenAI Chat Completions 兼容接口)"
+        printf "  请选择 [1]: "
+        IFS= read -r ans || ans=""
+        ans="${ans:-1}"
+        case "$ans" in
+            2) PROVIDER="external" ;;
+            *) PROVIDER="local" ;;
+        esac
+    fi
 fi
 
 if [ "$MODE" = "manual" ]; then
@@ -205,37 +224,68 @@ if [ "$MODE" = "manual" ]; then
 fi
 
 # ============================================================
-# 大模型分析模式
+# 大模型分析模式: 先按接入方式声明变量, 再收集算子需求
 # ============================================================
+API_BASE="${ITOOL_LLM_API_BASE:-}"
+API_KEY="${ITOOL_LLM_API_KEY:-}"
+MODEL="${ITOOL_LLM_MODEL:-}"
+TIMEOUT="${ITOOL_LLM_TIMEOUT:-120}"
+
+echo ""
+if [ "$PROVIDER" = "external" ]; then
+    echo -e "  ${CYAN}===== 外部 API 变量声明 =====${RESET}"
+    if [ -z "$API_BASE" ]; then
+        read_def "ITOOL_LLM_API_BASE" "https://api.deepseek.com/v1"
+        API_BASE="$REPLY"
+    fi
+    API_BASE="${API_BASE%/}"
+    if [ -z "$MODEL" ]; then
+        read_def "ITOOL_LLM_MODEL" "deepseek-chat"
+        MODEL="$REPLY"
+    fi
+    if [ -z "$API_KEY" ]; then
+        read_secret "ITOOL_LLM_API_KEY" ""
+        API_KEY="$REPLY"
+    fi
+else
+    echo -e "  ${CYAN}===== 本地大模型变量声明 =====${RESET}"
+    echo -e "  ${YELLOW}目标: 昇腾宿主机/容器内已启动的 vLLM-ascend 服务${RESET}"
+    if [ -z "$API_BASE" ]; then
+        read_def "ITOOL_LLM_API_BASE" "http://127.0.0.1:8000/v1"
+        API_BASE="$REPLY"
+    fi
+    API_BASE="${API_BASE%/}"
+    if [ -z "$MODEL" ]; then
+        read_def "ITOOL_LLM_MODEL(vLLM served model name)" "Qwen/Qwen2.5-7B-Instruct"
+        MODEL="$REPLY"
+    fi
+    if [ -z "$API_KEY" ]; then
+        read_secret "ITOOL_LLM_API_KEY(本地服务可留空)" ""
+        API_KEY="$REPLY"
+    fi
+fi
+
+[ -n "$API_BASE" ] || { echo -e "${RED}API Base 不能为空。${RESET}" >&2; exit 1; }
+[ -n "$MODEL" ] || { echo -e "${RED}模型名不能为空。${RESET}" >&2; exit 1; }
+
 DESC="${OP_DESC_LLM:-}"
 if [ -z "$DESC" ]; then
+    echo ""
     read_def "算子需求描述(自然语言, 建议说明算子名/输入输出/shape/数据类型)" ""
     DESC="$REPLY"
 fi
 [ -n "$DESC" ] || { echo -e "${RED}算子需求描述不能为空。${RESET}" >&2; exit 1; }
 
-API_BASE="${ITOOL_LLM_API_BASE:-http://127.0.0.1:8000/v1}"
-API_BASE="${API_BASE%/}"
-API_KEY="${ITOOL_LLM_API_KEY:-}"
-MODEL="${ITOOL_LLM_MODEL:-}"
-TIMEOUT="${ITOOL_LLM_TIMEOUT:-120}"
-
-if [ -z "$MODEL" ]; then
-    read_def "模型名 / vLLM served model name" "Qwen/Qwen2.5-7B-Instruct"
-    MODEL="$REPLY"
-fi
-[ -n "$MODEL" ] || { echo -e "${RED}模型名不能为空。${RESET}" >&2; exit 1; }
-
-if [ -z "$API_KEY" ]; then
-    read_secret "API Key(宿主机已启动的 vLLM 服务可留空)" ""
-    API_KEY="$REPLY"
-fi
-
 echo ""
-echo -e "  ${CYAN}大模型配置:${RESET}"
-echo "    API Base : $API_BASE"
-echo "    Model    : $MODEL"
-echo "    超时     : ${TIMEOUT}s"
+echo -e "  ${CYAN}本次大模型配置:${RESET}"
+echo "    ITOOL_LLM_API_BASE = $API_BASE"
+echo "    ITOOL_LLM_MODEL    = $MODEL"
+echo "    ITOOL_LLM_TIMEOUT  = ${TIMEOUT}s"
+if [ -n "$API_KEY" ]; then
+    echo "    ITOOL_LLM_API_KEY  = (已设置, 不显示明文)"
+else
+    echo "    ITOOL_LLM_API_KEY  = (未设置)"
+fi
 
 TMP_DIR=$(mktemp -d /tmp/itool-op-spec.XXXXXX)
 trap 'rm -rf "$TMP_DIR"' EXIT

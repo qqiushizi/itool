@@ -238,17 +238,18 @@ bash d.ops_develop/d.op_design/run.sh
 
 运行后可选：
 
-- `[1] 大模型分析`
-- `[2] 手动填写`
+- `[1] 本地大模型`：引导声明 `ITOOL_LLM_API_BASE` / `ITOOL_LLM_MODEL` / `ITOOL_LLM_API_KEY`
+- `[2] 外部 API`：引导声明外部 OpenAI Chat Completions 兼容接口参数
+- `[3] 手动填写`
 
-大模型模式支持外部 API 和使用工具的昇腾宿主机上已启动的 vLLM 服务，统走 OpenAI Chat Completions 协议：
+也支持通过环境变量直接进入：
 
 ```bash
-# 昇腾宿主机上的 vLLM-ascend 服务
-ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/run.sh
+# 昇腾宿主机上已启动的 vLLM-ascend 服务
+OP_SPEC_MODE=llm LLM_PROVIDER=local OP_DESC_LLM='实现矩阵乘法 MatMulCustom' ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/run.sh
 
 # 外部 API
-ITOOL_LLM_API_BASE=https://api.deepseek.com/v1 ITOOL_LLM_API_KEY=sk-xxxx ITOOL_LLM_MODEL=deepseek-chat bash d.ops_develop/d.op_design/run.sh
+OP_SPEC_MODE=llm LLM_PROVIDER=external OP_DESC_LLM='实现矩阵乘法 MatMulCustom' ITOOL_LLM_API_BASE=https://api.deepseek.com/v1 ITOOL_LLM_API_KEY=sk-xxxx ITOOL_LLM_MODEL=deepseek-chat bash d.ops_develop/d.op_design/run.sh
 ```
 
 生成：

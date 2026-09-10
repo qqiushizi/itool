@@ -50,7 +50,7 @@ digraph itool {
     S1 [label="① a.image_container\n输入镜像 + 容器实例化", fillcolor="#dafbe1", color="#2da44e"];
     S2 [label="② b.env_check\n容器内环境检查(只读)", fillcolor="#dafbe1", color="#2da44e"];
     S3 [label="③ c.install_cann\n按需安装/补装 CANN toolkit", fillcolor="#fff8c5", color="#d4a72c"];
-    S4 [label="④ d.op_design\n需求分析(LLM/手动) → op.json", fillcolor="#fff8c5", color="#d4a72c"];
+    S4 [label="④ d.op_design\n需求分析(本地/外部 LLM / 手动) → op.json", fillcolor="#fff8c5", color="#d4a72c"];
     S5 [label="⑤ e.op_scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#fff8c5", color="#d4a72c"];
   }
 

@@ -407,7 +407,7 @@ fi
 # 建议命令(只提示, 不自动执行)
 echo -e "  ${YELLOW}下一步建议(按需手动执行):${RESET}"
 if [ -z "$TOOLKIT_DIR" ]; then
-    echo -e "    → 安装/激活 CANN:   bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh"
+    echo -e "    → 安装/激活 CANN:   bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh"
 fi
 if [ -n "$SETENV" ]; then
     echo -e "    → 激活当前环境:     source $SETENV"
@@ -417,8 +417,8 @@ if [ "$TORCH_FOUND" = "0" ] || [ "$TORCH_NPU_FOUND" = "0" ]; then
 fi
 [ -n "$RECOMMEND_NOTE" ] && echo -e "    → 版本建议:         $RECOMMEND_NOTE"
 if [ "$MATRIX_OK" = "1" ]; then
-    echo -e "    → 需求分析:         bash d.ops_develop/d.design/a.op_spec/run.sh"
-    echo -e "    → 生成工程:         bash d.ops_develop/e.scaffold/a.msopgen/run.sh"
+    echo -e "    → 需求分析:         bash d.ops_develop/d.op_design/a.op_spec/run.sh"
+    echo -e "    → 生成工程:         bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh"
 fi
 echo ""
 echo "完成时间: $(date '+%F %T')"

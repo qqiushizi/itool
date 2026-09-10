@@ -163,7 +163,7 @@ else
     rc=$?
     if [ $rc -ne 0 ] || [ ! -s "$PKG_PATH" ]; then
         echo -e "${RED}下载失败(退出码 $rc)。${RESET}" >&2
-        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/b.env_setup/a.install_cann/d.cann-8.1.RC1/run.sh" >&2
+        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/b.install_cann/d.cann-8.1.RC1/run.sh" >&2
         exit 1
     fi
 fi
@@ -278,4 +278,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 镜像拉取 + 容器实例化 → bash d.ops_develop/c.container/run.sh"
+echo "下一步: 镜像拉取 + 容器实例化 → bash d.ops_develop/c.image_container/run.sh"

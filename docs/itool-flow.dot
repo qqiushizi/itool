@@ -48,10 +48,10 @@ digraph itool {
     fontsize=15;
 
     S1 [label="① a.env_check\n环境检查(版本矩阵/芯片识别)", fillcolor="#dafbe1", color="#2da44e"];
-    S2 [label="② a.install_cann\nCANN toolkit 安装(下载+安装)", fillcolor="#dafbe1", color="#2da44e"];
-    S3 [label="③ c.container\n镜像拉取 + 容器实例化", fillcolor="#dafbe1", color="#2da44e"];
-    S4 [label="④ d.design\n需求分析 → op.json", fillcolor="#fff8c5", color="#d4a72c"];
-    S5 [label="⑤ e.scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#fff8c5", color="#d4a72c"];
+    S2 [label="② b.install_cann\nCANN toolkit 安装(下载+安装)", fillcolor="#dafbe1", color="#2da44e"];
+    S3 [label="③ c.image_container\n镜像拉取 + 容器实例化", fillcolor="#dafbe1", color="#2da44e"];
+    S4 [label="④ d.op_design\n需求分析 → op.json", fillcolor="#fff8c5", color="#d4a72c"];
+    S5 [label="⑤ e.op_scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#fff8c5", color="#d4a72c"];
   }
 
   // ===== 连线 =====

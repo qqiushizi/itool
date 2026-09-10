@@ -1,11 +1,11 @@
-# c.container — 镜像拉取 + 容器实例化
+# c.image_container — 镜像拉取 + 容器实例化
 
 > 本目录合并了原来的 `b.pull_image` 和 `c.run_container`。
 
 ## 功能
 
 ```bash
-bash d.ops_develop/c.container/run.sh
+bash d.ops_develop/c.image_container/run.sh
 ```
 
 脚本会依次完成：
@@ -22,5 +22,5 @@ bash d.ops_develop/c.container/run.sh
 ```bash
 IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 \
 NAME=asc_dev WORK_DIR=/data/ops SHM_SIZE=16g \
-bash d.ops_develop/c.container/run.sh
+bash d.ops_develop/c.image_container/run.sh
 ```

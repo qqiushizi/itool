@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# ② CANN toolkit 9.0.0 安装 (下载 + 安装合并, 仅安装 toolkit)
+# ② CANN toolkit 9.1.0 安装 (下载 + 安装合并, 仅安装 toolkit)
 #
 # 功能:
 #   选择/指定一个主流稳定 CANN version → 自动找包或下载 toolkit → 安装
@@ -77,12 +77,12 @@ INSTALL_DIR="${INSTALL_DIR:-}"
 PKG_DIR="${PKG_DIR:-}"
 QUIET="${QUIET:-0}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
-CANN_VERSION="${CANN_VERSION:-9.0.0}"
+CANN_VERSION="${CANN_VERSION:-9.1.0}"
 CANN_BASE_URL="${CANN_BASE_URL:-https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%20__VER__}"
 
 echo ""
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "  ${WHITE}  ② CANN toolkit 安装 · 9.0.0 (仅 toolkit)${RESET}"
+echo -e "  ${WHITE}  ② CANN toolkit 安装 · 9.1.0 (仅 toolkit)${RESET}"
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
 
 # ---------- 2. 组装包名 / URL ----------
@@ -163,7 +163,7 @@ else
     rc=$?
     if [ $rc -ne 0 ] || [ ! -s "$PKG_PATH" ]; then
         echo -e "${RED}下载失败(退出码 $rc)。${RESET}" >&2
-        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/b.env_setup/a.install_cann/b.cann-9.0.0/run.sh" >&2
+        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh" >&2
         exit 1
     fi
 fi
@@ -278,4 +278,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 镜像拉取 + 容器实例化 → bash d.ops_develop/c.container/run.sh"
+echo "下一步: 镜像拉取 + 容器实例化 → bash d.ops_develop/c.image_container/run.sh"

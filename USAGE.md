@@ -93,7 +93,7 @@ curl -s -d 'MySecret123' http://<server-A>:5170/api/login
 curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/menu?path=d.ops_develop'
 # → HAS_RUN	0
 #   FOLDER	a.env_check	a
-#   FOLDER	b.env_setup	b
+#   FOLDER	b.install_cann	b
 #   ...
 
 # 打包下载 + 预览
@@ -139,24 +139,24 @@ bash d.ops_develop/a.env_check/run.sh
 - `芯片型号` ↔ `CANN` ↔ `torch_npu` 是否命中常见配套（910 系列 / 950 / 310P）。
 
 该脚本仅检查，**不修复、不安装、不自动写环境变量**。发现缺口时按需执行下面脚本：
-- 缺 CANN / 版本不符：进入 `a.install_cann` 选择版本安装（见 3.2），推荐 `a.cann-9.1.0`
+- 缺 CANN / 版本不符：进入 `b.install_cann` 选择版本安装（见 3.2），推荐 `a.cann-9.1.0`
 - 缺 torch/torch_npu：参考 `e.environment/e.setenvs/setenvs.sh` 中的 `install_torch`（当前内置支持 2.1.0 / 2.6.0）
 - 镜像 / 容器：见 3.3 / 3.4；进入容器后再次运行本脚本确认容器内版本也匹配。
 
 ### 3.2 ② CANN toolkit 安装（下载 + 安装合并，仅 toolkit，可选择版本目录）
 
-进入 `a.install_cann` 后，按 `a` / `b` / `c` / `d` 选择版本；也可直接运行对应版本脚本：
+进入 `b.install_cann` 后，按 `a` / `b` / `c` / `d` 选择版本；也可直接运行对应版本脚本：
 
 ```bash
 # 推荐：9.1.0
-bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
+bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
 
 # 9.0.0
-bash d.ops_develop/b.env_setup/a.install_cann/b.cann-9.0.0/run.sh
+bash d.ops_develop/b.install_cann/b.cann-9.0.0/run.sh
 
 # 旧芯片兼容
-bash d.ops_develop/b.env_setup/a.install_cann/c.cann-8.2.RC1/run.sh
-bash d.ops_develop/b.env_setup/a.install_cann/d.cann-8.1.RC1/run.sh
+bash d.ops_develop/b.install_cann/c.cann-8.2.RC1/run.sh
+bash d.ops_develop/b.install_cann/d.cann-8.1.RC1/run.sh
 ```
 
 每个版本只安装 `Ascend-cann-toolkit_<version>_linux-<arch>.run`，不安装 kernels/ops、不安装合一包/驱动。
@@ -170,16 +170,16 @@ bash d.ops_develop/b.env_setup/a.install_cann/d.cann-8.1.RC1/run.sh
 
 ```bash
 # 只检查官网 URL 是否可达, 不下载/不安装
-CHECK_ONLY=1 bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
+CHECK_ONLY=1 bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
 
 # 自动下载 + 自动安装
-ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1 bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
+ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1 bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
 
 # 指定安装目录 / 包目录
-INSTALL_DIR=/opt/Ascend PKG_DIR=/opt/cann_pkgs bash d.ops_develop/b.env_setup/a.install_cann/b.cann-9.0.0/run.sh
+INSTALL_DIR=/opt/Ascend PKG_DIR=/opt/cann_pkgs bash d.ops_develop/b.install_cann/b.cann-9.0.0/run.sh
 
 # 内网环境换源: 保留 __VER__ 占位符
-CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
+CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.install_cann/a.cann-9.1.0/run.sh
 ```
 
 > 当前已按官网资源探测可用的 toolkit 版本：`9.1.0`、`9.0.0`、`8.2.RC1`、`8.1.RC1`。
@@ -187,7 +187,7 @@ CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.en
 ### 3.3 ③ 镜像拉取 + 容器实例化（合并）
 
 ```bash
-bash d.ops_develop/c.container/run.sh
+bash d.ops_develop/c.image_container/run.sh
 ```
 
 该脚本先完成镜像选择/拉取，再自动进入容器实例化流程。
@@ -212,7 +212,7 @@ bash d.ops_develop/c.container/run.sh
 拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：
 
 ```bash
-IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash d.ops_develop/c.container/run.sh
+IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash d.ops_develop/c.image_container/run.sh
 ```
 
 > 网络健壮性：脚本会依次尝试 quay.io 官方 API / Docker Registry v2 API 并自动重试；若都失败，会给出兜底选项——`[1] 重试` / `[2] 用内置常见 tag 列表` / `[3] 手动输入镜像`，无需手动排查。
@@ -237,7 +237,7 @@ bash d.ops_develop/a.env_check/run.sh
 ### 3.4 ④ 算子需求分析 → 生成 op.json
 
 ```bash
-bash d.ops_develop/d.design/a.op_spec/run.sh
+bash d.ops_develop/d.op_design/a.op_spec/run.sh
 ```
 
 交互示例（回车用默认值）：
@@ -261,13 +261,13 @@ bash d.ops_develop/d.design/a.op_spec/run.sh
 
 ```bash
 # 轻量: msopgen 生成 AscendC 工程
-bash d.ops_develop/e.scaffold/a.msopgen/run.sh op_design_MatMulCustom/op.json
+bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh op_design_MatMulCustom/op.json
 
 # 完善: 拉取 ops-transformer 算子库(官方 gitcode)
-bash d.ops_develop/e.scaffold/b.ops_transformer/run.sh
+bash d.ops_develop/e.op_scaffold/b.ops_transformer/run.sh
 
 # 接入: torchbind(CPU + NPU) 工程
-bash d.ops_develop/e.scaffold/c.torchbind/run.sh MatMulCustom
+bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh MatMulCustom
 # 产物: MatMulCustom.cpp / setup.py / MatMulCustom_npu.cpp / setup_npu.py / README.md
 ```
 

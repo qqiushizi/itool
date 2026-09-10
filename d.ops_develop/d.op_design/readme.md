@@ -1,4 +1,4 @@
-# a.analysis — 算子需求分析
+# d.op_design — 算子需求分析
 
 > 工作流第 4 步：把算子需求转成 `op.json` 与 `op_spec.md`。
 > 支持两种分析方式：大模型分析、手动填写。
@@ -6,7 +6,7 @@
 ## 运行
 
 ```bash
-bash d.ops_develop/d.op_design/a.analysis/run.sh
+bash d.ops_develop/d.op_design/run.sh
 ```
 
 运行后会先选择：
@@ -49,7 +49,7 @@ export ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1
 # 在容器/宿主机上运行时，127.0.0.1 指向这台昇腾宿主机自身
 export ITOOL_LLM_MODEL=/path/to/model
 
-bash d.ops_develop/d.op_design/a.analysis/run.sh
+bash d.ops_develop/d.op_design/run.sh
 ```
 
 外部 API 示例：
@@ -59,13 +59,13 @@ export ITOOL_LLM_API_BASE=https://api.deepseek.com/v1
 export ITOOL_LLM_API_KEY=sk-xxxx
 export ITOOL_LLM_MODEL=deepseek-chat
 
-bash d.ops_develop/d.op_design/a.analysis/run.sh
+bash d.ops_develop/d.op_design/run.sh
 ```
 
 也支持跳过交互：
 
 ```bash
-OP_SPEC_MODE=llm OP_DESC_LLM='实现矩阵乘法 MatMulCustom...' ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/a.analysis/run.sh
+OP_SPEC_MODE=llm OP_DESC_LLM='实现矩阵乘法 MatMulCustom...' ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/run.sh
 ```
 
 ## 方式 2：手动填写
@@ -75,7 +75,7 @@ OP_SPEC_MODE=llm OP_DESC_LLM='实现矩阵乘法 MatMulCustom...' ITOOL_LLM_API_
 也可以通过环境变量直接进入手动模式：
 
 ```bash
-OP_SPEC_MODE=manual bash d.ops_develop/d.op_design/a.analysis/run.sh
+OP_SPEC_MODE=manual bash d.ops_develop/d.op_design/run.sh
 ```
 
 ## 输出

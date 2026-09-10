@@ -51,7 +51,7 @@ digraph itool {
     S2 [label="② b.install_cann\nCANN 安装 / source 激活", fillcolor="#dafbe1", color="#2da44e"];
     S3 [label="③ c.pull_image\nquay 可视化选 tag", fillcolor="#dafbe1", color="#2da44e"];
     S4 [label="④ d.run_container\n容器实例化 + 起容器脚本", fillcolor="#dafbe1", color="#2da44e"];
-    S5 [label="⑤ b.check_in_container\n进容器检查软件包", fillcolor="#dafbe1", color="#2da44e"];
+    S5 [label="⑤ b.check_container\n进容器检查软件包", fillcolor="#dafbe1", color="#2da44e"];
     S6 [label="⑥ c.design\n需求分析 → op.json", fillcolor="#dafbe1", color="#2da44e"];
     S7 [label="⑦ d.scaffold\nmsopgen / ops-transformer / torchbind", fillcolor="#dafbe1", color="#2da44e"];
   }

@@ -102,7 +102,7 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 d.ops_develop/
 ├── a.env_check/                       环境检查(宿主机 / 容器, 只读)
 │   ├── a.check_cann/run.sh          ① 服务器 CANN 检查(安装目录/版本/驱动/激活) 汇总报告
-│   └── b.check_in_container/run.sh  ⑤ 进容器检查软件包 → 确认可开始算子开发
+│   └── b.check_container/run.sh  ⑤ 进容器检查软件包 → 确认可开始算子开发
 ├── b.env_setup/                       环境搭建(下载 / 安装 / 镜像 / 容器)
 │   ├── a.download_cann/run.sh         下载 CANN 包(toolkit / kernels / 合一包), 支持 CHECK_ONLY
 │   ├── b.install_cann/run.sh        ② CANN 安装(交互: 方式/位置/source 激活)
@@ -136,7 +136,7 @@ bash d.ops_develop/b.env_setup/c.pull_image/run.sh
 bash d.ops_develop/b.env_setup/d.run_container/run.sh
 
 # ⑤ 进容器检查软件包, 确认可开始算子开发
-bash d.ops_develop/a.env_check/b.check_in_container/run.sh asc_dev
+bash d.ops_develop/a.env_check/b.check_container/run.sh asc_dev
 
 # ⑥ 需求分析 → 生成 op.json / op_spec.md
 bash d.ops_develop/c.design/a.op_spec/run.sh

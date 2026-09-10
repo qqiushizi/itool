@@ -221,7 +221,7 @@ bash d.ops_develop/b.env_setup/d.run_container/run.sh
 ### 3.6 ⑤ 进容器检查软件包 → 确认可开始算子开发
 
 ```bash
-bash d.ops_develop/a.env_check/b.check_in_container/run.sh asc_dev
+bash d.ops_develop/a.env_check/b.check_container/run.sh asc_dev
 ```
 
 在容器内检查 CANN/torch/torch_npu/编译链/NPU 设备，并给出结论：

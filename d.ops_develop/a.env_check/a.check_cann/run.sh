@@ -212,6 +212,6 @@ if ! have docker; then
 fi
 echo -e "    → 拉取镜像:           bash d.ops_develop/b.env_setup/c.pull_image/run.sh"
 echo -e "    → 起容器:             bash d.ops_develop/b.env_setup/d.run_container/run.sh"
-echo -e "    → 进容器检查:        bash d.ops_develop/a.env_check/b.check_in_container/run.sh 容器名"
+echo -e "    → 进容器检查:        bash d.ops_develop/a.env_check/b.check_container/run.sh 容器名"
 echo ""
 echo "完成时间: $(date '+%F %T')"

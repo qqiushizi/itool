@@ -244,20 +244,65 @@ parse_version_file() {
     return 1
 }
 
-# 4) 递归查版本文件，找到后把 TOOLKIT_DIR 修正为版本文件真正所在目录
-for d in "${UNIQ_DIRS[@]}"; do
-    [ -d "$d" ] || continue
-    while IFS= read -r vf; do
-        [ -f "$vf" ] || continue
-        v=$(parse_version_file "$vf") || continue
-        [ -n "$v" ] || continue
-        CANN_VER="$v"
-        VERSION_FILE="$vf"
-        TOOLKIT_DIR=$(dirname "$vf")
-        break
-    done < <(find -H "$d" -maxdepth 4 -type f \( -name 'version.cfg' -o -name 'version.info' -o -name 'version' \) 2>/dev/null | sort)
-    [ -n "$CANN_VER" ] && break
+# 将 CANN 版本转换为可比较的数值串，避免 9.0.0 比 9.1.0 排在前面
+ver_key() {
+    printf '%s' "$1" | awk -F. '{printf "%012d%012d%012d", ($1+0), ($2+0), ($3+0)}'
+}
+
+# 收集一个版本文件；若它是当前最高版本，则暂存为最佳识别结果
+BEST_VER=""
+BEST_KEY=""
+BEST_FILE=""
+BEST_DIR=""
+consider_version_file() {
+    local vfile="$1" v key
+    v=$(parse_version_file "$vfile") || return 0
+    key=$(ver_key "$v")
+    if [ -z "$BEST_KEY" ]; then
+        BEST_KEY="$key"
+        BEST_VER="$v"
+        BEST_FILE="$vfile"
+        BEST_DIR=$(dirname "$vfile")
+    elif [[ "$key" > "$BEST_KEY" ]]; then
+        BEST_KEY="$key"
+        BEST_VER="$v"
+        BEST_FILE="$vfile"
+        BEST_DIR=$(dirname "$vfile")
+    fi
+}
+
+# 4) 先确认“当前激活/常用”目录中的版本文件；若这里已有版本，则不再被其他旧版本干扰
+PRIORITY_DIRS=()
+for e in ASCEND_TOOLKIT_HOME ASCEND_HOME_PATH; do
+    pv="$(envval "$e")"
+    [ -n "$pv" ] && [ -d "$pv" ] && PRIORITY_DIRS+=("$pv")
 done
+PRIORITY_DIRS+=("/usr/local/Ascend/ascend-toolkit/latest")
+
+for d in "${PRIORITY_DIRS[@]}"; do
+    [ -n "$d" ] && [ -d "$d" ] || continue
+    for vf in "$d/version.cfg" "$d/version.info" "$d/version"; do
+        consider_version_file "$vf"
+    done
+    [ -n "$BEST_VER" ] && break
+done
+
+# 5) 若当前激活目录仍无法识别，再从所有候选目录中递归查找，并取最高版本
+if [ -z "$BEST_VER" ]; then
+    for d in "${UNIQ_DIRS[@]}"; do
+        [ -d "$d" ] || continue
+        while IFS= read -r vf; do
+            consider_version_file "$vf"
+        done < <(find -H "$d" -maxdepth 4 -type f \( -name 'version.cfg' -o -name 'version.info' -o -name 'version' \) 2>/dev/null | sort)
+    done
+fi
+
+# 6) 应用最佳识别结果，并把 TOOLKIT_DIR 修正为版本文件真正所在目录
+if [ -n "$BEST_VER" ]; then
+    CANN_VER="$BEST_VER"
+    VERSION_FILE="$BEST_FILE"
+    TOOLKIT_DIR="$BEST_DIR"
+fi
 
 if [ -n "$CANN_VER" ]; then
     ok "识别到 CANN 版本: $CANN_VER"

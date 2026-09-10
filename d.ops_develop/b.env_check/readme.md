@@ -28,6 +28,7 @@ bash d.ops_develop/b.env_check/run.sh
 - CANN 安装目录、版本文件、`set_env.sh` 激活脚本
 - CANN 版本识别会自动从 `ASCEND_HOME_PATH`、`ASCEND_TOOLKIT_HOME`、`ASCEND_OPP_PATH`
   以及 `/usr/local/Ascend` 下的常见目录递归查找 `version.cfg` / `version.info` / `version`
+- 多版本共存时，优先识别当前激活目录（`ASCEND_TOOLKIT_HOME` / `latest`）；无法定位激活目录时再取已识别到的最高版本
 - 综合结论：`匹配` 或 `存在缺失/不匹配`
 - 下一步建议命令（只提示，不执行）
 

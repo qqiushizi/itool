@@ -29,7 +29,7 @@ ask()  { local p="$1" d="$2"; printf "  %s [%s]: " "$p" "$d"; IFS= read -r REPLY
 command -v docker >/dev/null 2>&1 || { echo -e "${RED}未找到 docker, 请先安装。${RESET}" >&2; exit 1; }
 
 IMAGE_TO_USE="${1:-${IMAGE:-}}"
-NAME="${2:-${NAME:-asc_dev}}"
+NAME="${2:-${NAME:-}}"
 WORK_DIR="${WORK_DIR:-${ITOOL_WORK_DIR:-$HOME/ascend_ops_workspace}}"
 SHM_SIZE="${SHM_SIZE:-16g}"
 EXTRA_ARGS="${EXTRA_ARGS:-}"
@@ -49,6 +49,14 @@ fi
 
 echo ""
 echo -e "  ${CYAN}镜像地址:${RESET} $IMAGE_TO_USE"
+
+# 容器名：位置参数/环境变量已指定则直接用；否则交互让用户自定义
+if [ -z "$NAME" ]; then
+    ask "请输入容器名称" "asc_dev"
+    NAME="$REPLY"
+    [ -z "$NAME" ] && NAME="asc_dev"
+fi
+echo -e "  ${GREEN}[容器名]${RESET} $NAME"
 
 # ---------- 2. 本地检查, 不存在则拉取 ----------
 if docker image inspect "$IMAGE_TO_USE" >/dev/null 2>&1; then

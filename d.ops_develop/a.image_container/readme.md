@@ -8,7 +8,12 @@
 bash d.ops_develop/a.image_container/run.sh
 ```
 
-脚本会询问镜像地址，例如：
+脚本会先后询问：
+
+1. 镜像地址
+2. 容器名称（默认 `asc_dev`）
+
+镜像地址示例：
 
 ```text
 quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10
@@ -23,7 +28,7 @@ IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.ima
 或：
 
 ```bash
-bash d.ops_develop/a.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10
+bash d.ops_develop/a.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 asc_dev
 ```
 
 ## 自动流程

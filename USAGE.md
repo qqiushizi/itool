@@ -122,12 +122,12 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 bash d.ops_develop/a.image_container/run.sh
 ```
 
-脚本只问一个关键信息：镜像地址。也支持非交互：
+脚本会询问镜像地址和容器名称（默认 `asc_dev`）。也支持非交互：
 
 ```bash
 IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
 
-bash d.ops_develop/a.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10
+bash d.ops_develop/a.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 asc_dev
 ```
 
 自动流程：

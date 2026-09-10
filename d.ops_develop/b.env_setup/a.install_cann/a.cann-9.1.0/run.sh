@@ -16,6 +16,8 @@
 #   PKG_DIR=./cann_pkgs        # 优先从这个目录找包, 找不到时也可下载到这里
 #   CHECK_ONLY=1               # 只探测官方 URL 是否可达, 不下载/不安装
 #   ITOOL_AUTO_DL=1            # 缺包时自动下载, 不再询问
+#   ITOOL_AUTO_INSTALL=1       # 安装前不再询问
+#   ITOOL_FORCE=1              # 目录已存在 CANN 时允许覆盖(默认禁止覆盖)
 #   QUIET=1                    # 安装时增加 --quiet
 #   CANN_BASE_URL=https://内网镜像/CANN/CANN%20__VER__
 #
@@ -40,12 +42,37 @@ ask()    { # $1=提示 $2=默认值 => $REPLY
 confirm(){ local ans; printf "  %s [y/N]: " "$1"; IFS= read -r ans || ans=""; case "$ans" in y|Y|yes|YES) return 0;; *) return 1;; esac; }
 
 # ---------- 参数 ----------
-ARCH="${ARCH:-$(uname -m)}"
-case "$ARCH" in
-    x86_64|amd64) ARCH="x86_64" ;;
-    arm64|aarch64) ARCH="aarch64" ;;
-    *) echo -e "${YELLOW}[ WARN]${RESET} 未知架构: $ARCH, 继续按其生成包名。" ;;
-esac
+detect_arch() {
+    local a=""
+    if have uname; then a=$(uname -m 2>/dev/null || true); fi
+    if [ -z "$a" ] && have lscpu; then
+        a=$(lscpu 2>/dev/null | awk -F ':' '/架构|Architecture/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2; exit}')
+    fi
+    if [ -z "$a" ] && have dpkg; then a=$(dpkg --print-architecture 2>/dev/null || true); fi
+    case "$a" in
+        x86_64|amd64) a="x86_64" ;;
+        arm64|aarch64) a="aarch64" ;;
+    esac
+    printf '%s' "$a"
+}
+normalize_arch() {
+    case "$1" in
+        x86_64|amd64) printf 'x86_64' ;;
+        arm64|aarch64) printf 'aarch64' ;;
+        *) printf '%s' "$1" ;;
+    esac
+}
+ARCH="${ARCH:-$(detect_arch)}"
+ARCH=$(normalize_arch "$ARCH")
+if [ "$ARCH" != "x86_64" ] && [ "$ARCH" != "aarch64" ]; then
+    echo -e "  ${YELLOW}[ WARN]${RESET} 自动识别架构结果不明确: $ARCH"
+    echo "  x86_64  → Ascend-cann-toolkit_*_linux-x86_64.run"
+    echo "  aarch64 → Ascend-cann-toolkit_*_linux-aarch64.run"
+    ask "请确认 CPU 架构" "x86_64"; ARCH=$(normalize_arch "$REPLY")
+    if [ "$ARCH" != "x86_64" ] && [ "$ARCH" != "aarch64" ]; then
+        echo -e "${RED}无法确定 CPU 架构, 已退出。${RESET}" >&2; exit 1
+    fi
+fi
 INSTALL_DIR="${INSTALL_DIR:-}"
 PKG_DIR="${PKG_DIR:-}"
 QUIET="${QUIET:-0}"
@@ -142,8 +169,38 @@ else
 fi
 
 # ---------- 5. 安装位置 / SUDO ----------
+has_cann_markers() {
+    [ -f "$1/set_env.sh" ] || [ -f "$1/version.cfg" ] || [ -f "$1/version" ] || [ -f "$1/version.info" ] || [ -d "$1/latest" ]
+}
+
+DEFAULT_INSTALL_DIR="/usr/local/Ascend/ascend-toolkit-${CANN_VERSION}"
+SAFE_INSTALL_DIR="$DEFAULT_INSTALL_DIR"
+while [ -e "$SAFE_INSTALL_DIR" ]; do SAFE_INSTALL_DIR="${SAFE_INSTALL_DIR}-new"; done
+
 if [ -z "$INSTALL_DIR" ]; then
-    ask "安装位置" "/usr/local/Ascend/ascend-toolkit"; INSTALL_DIR="$REPLY"
+    echo ""
+    echo -e "  ${YELLOW}⚠ 为防止覆盖已有 CANN, 请提供安装目录。${RESET}"
+    for d in /usr/local/Ascend/ascend-toolkit /usr/local/Ascend/ascend-toolkit/latest /usr/local/Ascend; do
+        if has_cann_markers "$d"; then
+            echo -e "    ${YELLOW}[已检测到 CANN]${RESET} $d"
+        fi
+    done
+    ask "安装目录" "$SAFE_INSTALL_DIR"; INSTALL_DIR="$REPLY"
+fi
+[ -n "$INSTALL_DIR" ] || { echo -e "${RED}未提供安装目录。${RESET}" >&2; exit 1; }
+
+if [ -d "$INSTALL_DIR" ] && has_cann_markers "$INSTALL_DIR"; then
+    echo -e "${RED}✖ 目标目录已存在 CANN 环境, 默认禁止覆盖: $INSTALL_DIR${RESET}" >&2
+    echo "  建议换一个新目录, 例如: $SAFE_INSTALL_DIR" >&2
+    if [ "${ITOOL_FORCE:-0}" = "1" ]; then
+        confirm "已设置 ITOOL_FORCE=1, 仍要解压/安装到该目录吗?" || { echo -e "${RED}已取消。${RESET}" >&2; exit 1; }
+    else
+        echo "  若你明确要覆盖/升级原目录, 请设置 ITOOL_FORCE=1 后重试。" >&2
+        exit 1
+    fi
+elif [ -d "$INSTALL_DIR" ] && [ -n "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
+    echo -e "  ${YELLOW}[注意]${RESET} 目录已存在且非空: $INSTALL_DIR"
+    confirm "仍继续使用该目录?" || { echo -e "${RED}已取消。${RESET}" >&2; exit 1; }
 fi
 mkdir -p "$INSTALL_DIR" 2>/dev/null || true
 

@@ -24,6 +24,27 @@ bash d.ops_develop/b.env_setup/a.install_cann/b.cann-9.0.0/run.sh
 
 每个版本脚本会完成：查包/自动下载 → 安装到指定目录 → `source set_env.sh` → 验证 `acl` → 可选写入 `~/.bashrc`。
 
+## CPU 架构自动识别
+
+脚本会按以下顺序识别架构：
+
+1. `uname -m`
+2. `lscpu` 的 `Architecture`
+3. `dpkg --print-architecture`
+
+并归一化为：
+
+- `x86_64` → `Ascend-cann-toolkit_*_linux-x86_64.run`
+- `aarch64` → `Ascend-cann-toolkit_*_linux-aarch64.run`
+
+如果识别不到，会询问用户手动确认架构。
+
+## 安装目录防覆盖
+
+- 默认建议安装到：`/usr/local/Ascend/ascend-toolkit-<version>`
+- 如果用户输入的目录已经存在 CANN 标识文件（`set_env.sh` / `version.cfg` / `version` / `latest`），默认直接拒绝覆盖并退出。
+- 只有显式 `ITOOL_FORCE=1` 并再次确认后，才允许写入已有 CANN 目录。
+
 ## 常用非交互变量
 
 ```bash
@@ -35,4 +56,8 @@ ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1 bash d.ops_develop/b.env_setup/a.install_ca
 
 # 指定安装目录 / 包目录
 INSTALL_DIR=/opt/Ascend PKG_DIR=/opt/cann_pkgs bash d.ops_develop/b.env_setup/a.install_cann/b.cann-9.0.0/run.sh
+
+# 非强制覆盖已有 CANN 目录
+# 默认禁止; 仅当你明确知道后果才加 ITOOL_FORCE=1
+ITOOL_FORCE=1 bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
 ```

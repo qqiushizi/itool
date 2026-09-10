@@ -161,6 +161,9 @@ bash d.ops_develop/b.env_setup/a.install_cann/d.cann-8.1.RC1/run.sh
 
 每个版本只安装 `Ascend-cann-toolkit_<version>_linux-<arch>.run`，不安装 kernels/ops、不安装合一包/驱动。
 
+- CPU 架构自动识别：`uname -m` → `lscpu` → `dpkg --print-architecture`，归一化为 `x86_64` 或 `aarch64`。
+- 安装目录防覆盖：默认建议版本化新目录；若目标目录已存在 CANN，默认拒绝覆盖，必须显式 `ITOOL_FORCE=1` 才允许继续。
+
 自动流程：查包/缺包询问下载 → 下载 toolkit → `.run --install --install-path=<安装目录>` → 自动 `source set_env.sh` → `python3 -c "import acl"` 验证 → 可选写入 `~/.bashrc`。
 
 常用非交互/自动化变量：

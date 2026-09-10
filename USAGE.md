@@ -139,43 +139,44 @@ bash d.ops_develop/a.env_check/run.sh
 - `芯片型号` ↔ `CANN` ↔ `torch_npu` 是否命中常见配套（910 系列 / 950 / 310P）。
 
 该脚本仅检查，**不修复、不安装、不自动写环境变量**。发现缺口时按需执行下面脚本：
-- 缺 CANN / 版本不符：`bash d.ops_develop/b.env_setup/a.install_cann/run.sh`（见 3.2）
+- 缺 CANN / 版本不符：进入 `a.install_cann` 选择版本安装（见 3.2），推荐 `a.cann-9.1.0`
 - 缺 torch/torch_npu：参考 `e.environment/e.setenvs/setenvs.sh` 中的 `install_torch`（当前内置支持 2.1.0 / 2.6.0）
 - 镜像 / 容器：见 3.3 / 3.4；进入容器后再次运行本脚本确认容器内版本也匹配。
 
-### 3.2 ② CANN toolkit 安装（下载 + 安装合并，仅 toolkit）
+### 3.2 ② CANN toolkit 安装（下载 + 安装合并，仅 toolkit，可选择版本目录）
+
+进入 `a.install_cann` 后，按 `a` / `b` / `c` / `d` 选择版本；也可直接运行对应版本脚本：
 
 ```bash
-bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+# 推荐：9.1.0
+bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
+
+# 9.0.0
+bash d.ops_develop/b.env_setup/a.install_cann/b.cann-9.0.0/run.sh
+
+# 旧芯片兼容
+bash d.ops_develop/b.env_setup/a.install_cann/c.cann-8.2.RC1/run.sh
+bash d.ops_develop/b.env_setup/a.install_cann/d.cann-8.1.RC1/run.sh
 ```
 
-交互示例：
-
-```
-请选择 CANN toolkit 版本:
-  1) 9.1.0   [默认/推荐]
-  2) 9.0.0
-  3) 8.2.RC1 [旧芯片兼容]
-  4) 8.1.RC1 [旧芯片兼容]
-选择 [1]:
-安装位置 [/usr/local/Ascend/ascend-toolkit]:
-```
-
-本脚本只安装 `Ascend-cann-toolkit_<version>_linux-<arch>.run`，不安装 kernels/ops、不安装合一包/驱动。
+每个版本只安装 `Ascend-cann-toolkit_<version>_linux-<arch>.run`，不安装 kernels/ops、不安装合一包/驱动。
 
 自动流程：查包/缺包询问下载 → 下载 toolkit → `.run --install --install-path=<安装目录>` → 自动 `source set_env.sh` → `python3 -c "import acl"` 验证 → 可选写入 `~/.bashrc`。
 
-非交互/自动化常用变量：
+常用非交互/自动化变量：
 
 ```bash
 # 只检查官网 URL 是否可达, 不下载/不安装
-CANN_VERSION=9.1.0 CHECK_ONLY=1 bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+CHECK_ONLY=1 bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
 
-# 指定版本静默安装
-CANN_VERSION=9.1.0 QUIET=1 ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1   bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+# 自动下载 + 自动安装
+ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1 bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
+
+# 指定安装目录 / 包目录
+INSTALL_DIR=/opt/Ascend PKG_DIR=/opt/cann_pkgs bash d.ops_develop/b.env_setup/a.install_cann/b.cann-9.0.0/run.sh
 
 # 内网环境换源: 保留 __VER__ 占位符
-CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
 ```
 
 > 当前已按官网资源探测可用的 toolkit 版本：`9.1.0`、`9.0.0`、`8.2.RC1`、`8.1.RC1`。

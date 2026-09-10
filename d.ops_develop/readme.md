@@ -13,6 +13,11 @@ d.ops_develop/
 │   └── readme.md      功能说明
 ├── b.env_setup/                       环境搭建(下载 / 安装 / 镜像 / 容器)
 │   ├── a.install_cann/     ② CANN toolkit 安装(下载+安装合并, 仅 toolkit)
+│   │   ├── a.cann-9.1.0/    9.1.0 (推荐)
+│   │   ├── b.cann-9.0.0/    9.0.0
+│   │   ├── c.cann-8.2.RC1/  8.2.RC1 (旧芯片兼容)
+│   │   ├── d.cann-8.1.RC1/  8.1.RC1 (旧芯片兼容)
+│   │   └── readme.md        版本说明
 │   ├── b.pull_image/       ③ 镜像拉取(quay.io 可视化选 tag)
 │   └── c.run_container/    ④ 容器实例化(交互输入 + 生成可编辑起容器脚本)
 ├── c.design/               ⑤ 算子设计需求分析 → op.json + op_spec.md
@@ -26,7 +31,7 @@ d.ops_develop/
 bash d.ops_develop/a.env_check/run.sh
 
 # ② CANN toolkit 安装(选择版本, 下载+安装一步完成, 仅 toolkit)
-bash d.ops_develop/b.env_setup/a.install_cann/run.sh
+bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
 
 # ③ 拉镜像(可视化选择 tag)
 bash d.ops_develop/b.env_setup/b.pull_image/run.sh

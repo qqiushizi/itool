@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# ② CANN toolkit 安装 (下载 + 安装合并, 仅安装 toolkit)
+# ② CANN toolkit 8.2.RC1 安装 (下载 + 安装合并, 仅安装 toolkit)
 #
 # 功能:
 #   选择/指定一个主流稳定 CANN version → 自动找包或下载 toolkit → 安装
@@ -50,52 +50,13 @@ INSTALL_DIR="${INSTALL_DIR:-}"
 PKG_DIR="${PKG_DIR:-}"
 QUIET="${QUIET:-0}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
-CANN_VERSION="${CANN_VERSION:-}"
+CANN_VERSION="${CANN_VERSION:-8.2.RC1}"
 CANN_BASE_URL="${CANN_BASE_URL:-https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%20__VER__}"
-
-SUPPORTED_VERSIONS=("9.1.0" "9.0.0" "8.2.RC1" "8.1.RC1")
-SUPPORTED_DESC=("9.1.0   [默认/推荐]" "9.0.0" "8.2.RC1 [旧芯片兼容]" "8.1.RC1 [旧芯片兼容]")
-
-valid_version() {
-    local v="$1" x
-    for x in "${SUPPORTED_VERSIONS[@]}"; do
-        [ "$x" = "$v" ] && return 0
-    done
-    return 1
-}
 
 echo ""
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "  ${WHITE}  ② CANN toolkit 安装 (仅 toolkit, 下载 + 安装一步完成)${RESET}"
+echo -e "  ${WHITE}  ② CANN toolkit 安装 · 8.2.RC1 (仅 toolkit)${RESET}"
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-
-# ---------- 1. 选择版本 ----------
-if [ -z "$CANN_VERSION" ]; then
-    echo ""
-    echo -e "  ${CYAN}请选择 CANN toolkit 版本:${RESET}"
-    local_i=0
-    for desc in "${SUPPORTED_DESC[@]}"; do
-        local_i=$((local_i+1))
-        echo "    $local_i) $desc"
-    done
-    printf "  %s" "选择 [1]: "
-    IFS= read -r REPLY || REPLY=""
-    REPLY="${REPLY:-1}"
-    case "$REPLY" in
-        [1-9])
-            CANN_VERSION="${SUPPORTED_VERSIONS[$((REPLY-1))]:-}"
-            ;;
-        *)
-            CANN_VERSION="${SUPPORTED_VERSIONS[0]}"
-            ;;
-    esac
-fi
-
-if ! valid_version "$CANN_VERSION"; then
-    echo -e "${RED}暂不支持的 CANN 版本: $CANN_VERSION${RESET}" >&2
-    echo -e "  当前可选择: ${SUPPORTED_VERSIONS[*]}" >&2
-    exit 1
-fi
 
 # ---------- 2. 组装包名 / URL ----------
 PKG="Ascend-cann-toolkit_${CANN_VERSION}_linux-${ARCH}.run"
@@ -175,7 +136,7 @@ else
     rc=$?
     if [ $rc -ne 0 ] || [ ! -s "$PKG_PATH" ]; then
         echo -e "${RED}下载失败(退出码 $rc)。${RESET}" >&2
-        echo "可先探测: CHECK_ONLY=1 CANN_VERSION=$CANN_VERSION bash d.ops_develop/b.env_setup/a.install_cann/run.sh" >&2
+        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/b.env_setup/a.install_cann/c.cann-8.2.RC1/run.sh" >&2
         exit 1
     fi
 fi

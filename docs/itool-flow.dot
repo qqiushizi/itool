@@ -47,7 +47,7 @@ digraph itool {
     fontcolor="#57606a";
     fontsize=15;
 
-    S1 [label="① a.check_env\n环境检查(版本矩阵/芯片识别)", fillcolor="#dafbe1", color="#2da44e"];
+    S1 [label="① a.env_check\n环境检查(版本矩阵/芯片识别)", fillcolor="#dafbe1", color="#2da44e"];
     S2 [label="② b.install_cann\nCANN 安装 / source 激活", fillcolor="#dafbe1", color="#2da44e"];
     S3 [label="③ c.pull_image\nquay 可视化选 tag", fillcolor="#dafbe1", color="#2da44e"];
     S4 [label="④ d.run_container\n容器实例化 + 起容器脚本", fillcolor="#dafbe1", color="#2da44e"];

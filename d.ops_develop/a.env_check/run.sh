@@ -15,8 +15,7 @@
 #   5) 兼容性矩阵判断: Python ↔ torch ↔ torch_npu ↔ CANN ↔ 芯片
 #
 # 用法:
-#   bash d.ops_develop/a.env_check/a.check_env/run.sh
-#   SCRIPT_ONLY=1 bash ...          # 仅打印推荐修复命令, 不执行
+#   bash d.ops_develop/a.env_check/run.sh
 #
 # 说明:
 #   - 纯 bash + 标准命令, 兼容 bash 3.2。

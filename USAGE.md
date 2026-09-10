@@ -110,7 +110,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 ### 3.1 ① 环境检查（单脚本：芯片型号 + 软件版本匹配矩阵）
 
 ```bash
-bash d.ops_develop/a.env_check/a.check_env/run.sh
+bash d.ops_develop/a.env_check/run.sh
 ```
 
 该脚本在**当前 shell 所在环境**直接检查（不做交互选择，不修改系统），输出重点：
@@ -229,7 +229,7 @@ bash d.ops_develop/b.env_setup/d.run_container/run.sh
 ```bash
 docker exec -it asc_dev bash
 # 容器内执行:
-bash d.ops_develop/a.env_check/a.check_env/run.sh
+bash d.ops_develop/a.env_check/run.sh
 ```
 
 ### 3.6 ⑤ 算子需求分析 → 生成 op.json

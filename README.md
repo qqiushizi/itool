@@ -101,7 +101,8 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 ```
 d.ops_develop/
 ├── a.env_check/                       环境检查(宿主机 / 容器通用, 只读)
-│   └── a.check_env/run.sh           ① 环境检查(芯片识别 + 版本兼容性矩阵)
+│   ├── run.sh           ① 环境检查(芯片识别 + 版本兼容性矩阵)
+│   └── readme.md         功能说明
 ├── b.env_setup/                       环境搭建(下载 / 安装 / 镜像 / 容器)
 │   ├── a.download_cann/run.sh         下载 CANN 包(toolkit / kernels / 合一包), 支持 CHECK_ONLY
 │   ├── b.install_cann/run.sh        ② CANN 安装(交互: 方式/位置/source 激活)
@@ -119,7 +120,7 @@ d.ops_develop/
 
 ```bash
 # ① 环境检查(宿主机/容器通用: 芯片型号 + 软件版本匹配矩阵)
-bash d.ops_develop/a.env_check/a.check_env/run.sh
+bash d.ops_develop/a.env_check/run.sh
 
 # (可选) 下载 CANN 包
 CANN_VERSION=8.1.RC1 CHIP=910b bash d.ops_develop/b.env_setup/a.download_cann/run.sh
@@ -136,7 +137,7 @@ bash d.ops_develop/b.env_setup/d.run_container/run.sh
 
 # 进入容器后再次运行同一个环境检查, 确认容器内版本也匹配
 # docker exec -it asc_dev bash
-# bash d.ops_develop/a.env_check/a.check_env/run.sh
+# bash d.ops_develop/a.env_check/run.sh
 
 # ⑤ 需求分析 → 生成 op.json / op_spec.md
 bash d.ops_develop/c.design/a.op_spec/run.sh

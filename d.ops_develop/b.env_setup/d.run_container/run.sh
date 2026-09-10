@@ -140,4 +140,4 @@ fi
 
 echo ""
 echo -e "  ${CYAN}下一步:${RESET} 进入容器后执行环境检查 → docker exec -it $NAME bash"
-echo -e "            容器内执行: bash d.ops_develop/a.env_check/a.check_env/run.sh"
+echo -e "            容器内执行: bash d.ops_develop/a.env_check/run.sh"

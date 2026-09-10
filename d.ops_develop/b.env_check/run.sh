@@ -177,74 +177,128 @@ fi
 # ============================================================
 section "3. CANN toolkit 版本"
 
+CANN_VER=""
 TOOLKIT_DIR=""
-CANDIDATES=()
-[ -n "$(envval ASCEND_HOME_PATH)" ] && CANDIDATES+=("$(envval ASCEND_HOME_PATH)")
-[ -n "$(envval ASCEND_TOOLKIT_HOME)" ] && CANDIDATES+=("$(envval ASCEND_TOOLKIT_HOME)")
-CANDIDATES+=("/usr/local/Ascend/ascend-toolkit/latest" "/usr/local/Ascend/ascend-toolkit" "/usr/local/Ascend")
+VERSION_FILE=""
+SETENV=""
+OPP_DIR=""
 
-FOUND_DIRS=()
-for d in "${CANDIDATES[@]}"; do
-    [ -n "$d" ] && [ -d "$d" ] && FOUND_DIRS+=("$d")
-done
-
-# 去重(保序)
 UNIQ_DIRS=()
-for d in "${FOUND_DIRS[@]}"; do
-    found=0
-    for u in "${UNIQ_DIRS[@]}"; do [ "$u" = "$d" ] && found=1 && break; done
-    [ "$found" = "0" ] && UNIQ_DIRS+=("$d")
-done
-FOUND_DIRS=("${UNIQ_DIRS[@]}")
-
-if [ ${#FOUND_DIRS[@]} -gt 0 ]; then
-    for d in "${FOUND_DIRS[@]}"; do
-        echo -e "  ${GREEN}•${RESET} $d"
-        [ -n "$TOOLKIT_DIR" ] || TOOLKIT_DIR="$d"
+add_unique_dir() {
+    local d="$1" found=0 u
+    [ -n "$d" ] || return 0
+    [ -d "$d" ] || return 0
+    for u in "${UNIQ_DIRS[@]}"; do
+        [ "$u" = "$d" ] && found=1 && break
     done
+    [ "$found" = "0" ] && UNIQ_DIRS+=("$d")
+}
+
+# 1) 优先采用环境变量声明的 CANN 路径
+for e in ASCEND_HOME_PATH ASCEND_TOOLKIT_HOME ASCEND_OPP_PATH; do
+    add_unique_dir "$(envval "$e")"
+done
+
+# 2) 常用默认路径
+for d in /usr/local/Ascend/ascend-toolkit/latest /usr/local/Ascend/ascend-toolkit /usr/local/Ascend; do
+    add_unique_dir "$d"
+done
+
+# 3) 若只有 /usr/local/Ascend 这类父目录，也把下一级目录纳入，
+#    以便找到 /usr/local/Ascend/ascend-toolkit/latest 等真实 toolkit 根目录
+for base in /usr/local/Ascend /usr/local/Ascend/ascend-toolkit; do
+    [ -d "$base" ] || continue
+    for child in "$base"/*; do
+        [ -d "$child" ] || continue
+        add_unique_dir "$child"
+    done
+done
+
+if [ ${#UNIQ_DIRS[@]} -gt 0 ]; then
+    for d in "${UNIQ_DIRS[@]}"; do
+        echo -e "  ${GREEN}•${RESET} 候选目录: $d"
+    done
+    TOOLKIT_DIR="${UNIQ_DIRS[0]}"
 else
     bad "未发现 CANN toolkit 安装目录"
 fi
 
-CANN_VER=""
-SETENV=""
-print_verfile() { if [ -f "$1" ]; then echo "        --- $1 ---"; sed 's/^/        /' "$1" 2>/dev/null | head -12; fi; }
+# 从文件内容解析 CANN 版本；兼容 version.cfg / version.info / version
+parse_version_file() {
+    local f="$1" line v
+    [ -f "$f" ] || return 1
+    while IFS= read -r line || [ -n "$line" ]; do
+        line=$(printf '%s' "$line" | sed 's/[[:space:]]*#.*$//')
+        case "$line" in
+            *version*=*|*VERSION*=*)
+                v=$(printf '%s' "$line" | grep -iE '(version|ascend_toolkit_version|toolkit_version|cann_version)[^=]*=' | head -1 | sed 's/^[^=]*=//' | sed 's/^[[:space:]]*//')
+                v=$(printf '%s' "$v" | grep -oiE '[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?([.-]?B[0-9]+)?' | head -1)
+                [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+                ;;
+        esac
+    done < "$f"
 
-if [ -n "$TOOLKIT_DIR" ] && [ -d "$TOOLKIT_DIR" ]; then
-    for vf in version.cfg version version.info; do
-        if [ -f "$TOOLKIT_DIR/$vf" ]; then
-            print_verfile "$TOOLKIT_DIR/$vf"
-            [ -n "$CANN_VER" ] && continue
-            case "$vf" in
-                version.cfg)
-                    CANN_VER=$(grep -iE '^\s*version\s*=' "$TOOLKIT_DIR/$vf" 2>/dev/null | head -1 | sed 's/^[^=]*=//' | tr -d '[:space:]"')
-                    ;;
-                version|version.info)
-                    CANN_VER=$(head -1 "$TOOLKIT_DIR/$vf" 2>/dev/null | sed 's/^[^=]*=//' | tr -d '[:space:]"')
-                    ;;
-            esac
-        fi
-    done
-    [ -z "$CANN_VER" ] && CANN_VER="已安装(版本未知)"
+    # 兜底：任意包含版本号的行
+    v=$(grep -oiE '[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?([.-]?B[0-9]+)?' "$f" 2>/dev/null | head -1)
+    [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+    return 1
+}
+
+# 4) 递归查版本文件，找到后把 TOOLKIT_DIR 修正为版本文件真正所在目录
+for d in "${UNIQ_DIRS[@]}"; do
+    [ -d "$d" ] || continue
+    while IFS= read -r vf; do
+        [ -f "$vf" ] || continue
+        v=$(parse_version_file "$vf") || continue
+        [ -n "$v" ] || continue
+        CANN_VER="$v"
+        VERSION_FILE="$vf"
+        TOOLKIT_DIR=$(dirname "$vf")
+        break
+    done < <(find -H "$d" -maxdepth 4 -type f \( -name 'version.cfg' -o -name 'version.info' -o -name 'version' \) 2>/dev/null | sort)
+    [ -n "$CANN_VER" ] && break
+done
+
+if [ -n "$CANN_VER" ]; then
+    ok "识别到 CANN 版本: $CANN_VER"
+    printf '  %-14s: %s\n' "安装目录" "$TOOLKIT_DIR"
+    printf '  %-14s: %s\n' "版本文件" "$VERSION_FILE"
+else
+    if [ -n "$TOOLKIT_DIR" ]; then
+        warn "发现 CANN 安装目录, 但未在候选目录内找到 version.cfg / version.info / version"
+        printf '  %-14s: %s\n' "目录" "$TOOLKIT_DIR"
+    else
+        warn "未识别 CANN 版本文件"
+    fi
 fi
 
+# 5) OPP(算子原型库)识别
 OPP_DIR="$(envval ASCEND_OPP_PATH)"
-[ -z "$OPP_DIR" ] && [ -n "$TOOLKIT_DIR" ] && OPP_DIR="$TOOLKIT_DIR/opp"
+[ -z "$OPP_DIR" ] && [ -n "$TOOLKIT_DIR" ] && [ -d "$TOOLKIT_DIR/opp" ] && OPP_DIR="$TOOLKIT_DIR/opp"
 if [ -n "$OPP_DIR" ] && [ -d "$OPP_DIR" ]; then
     echo -e "  ${GREEN}•${RESET} OPP(算子原型库): $OPP_DIR"
 else
     [ -n "$TOOLKIT_DIR" ] && warn "未找到 OPP(算子原型库), 算子开发通常需要 kernels/opp"
 fi
 
+# 6) 激活环境与 set_env.sh
 if [ -n "$(envval ASCEND_HOME_PATH)" ] && [ -n "$(envval ASCEND_TOOLKIT_HOME)" ]; then
     SOURCE_STATE="部分/已设置 ASCEND_HOME_PATH、ASCEND_TOOLKIT_HOME"
 else
     SOURCE_STATE="未在当前 shell 检测到完整 ASCEND_* 激活变量"
 fi
 
-for p in "$TOOLKIT_DIR/set_env.sh" "$(envval ASCEND_HOME_PATH)/set_env.sh" /usr/local/Ascend/ascend-toolkit/set_env.sh /usr/local/Ascend/ascend-toolkit/latest/set_env.sh /usr/local/Ascend/set_env.sh; do
-    if [ -n "$p" ] && [ -f "$p" ]; then SETENV="$p"; break; fi
-done
+if [ -n "$TOOLKIT_DIR" ] && [ -f "$TOOLKIT_DIR/set_env.sh" ]; then
+    SETENV="$TOOLKIT_DIR/set_env.sh"
+fi
+if [ -z "$SETENV" ] && [ -n "$TOOLKIT_DIR" ] && [ -f "$(dirname "$TOOLKIT_DIR")/set_env.sh" ]; then
+    SETENV="$(dirname "$TOOLKIT_DIR")/set_env.sh"
+fi
+if [ -z "$SETENV" ]; then
+    for p in "$(envval ASCEND_HOME_PATH)/set_env.sh" /usr/local/Ascend/ascend-toolkit/set_env.sh /usr/local/Ascend/ascend-toolkit/latest/set_env.sh /usr/local/Ascend/set_env.sh; do
+        if [ -n "$p" ] && [ -f "$p" ]; then SETENV="$p"; break; fi
+    done
+fi
 
 if [ -n "$SETENV" ]; then
     ok "找到 CANN 激活脚本: $SETENV"

@@ -3,14 +3,14 @@
 # 算子设计 / 需求分析 (支持大模型分析与手动填写)
 #
 # 模式:
-#   [1] 大模型分析: 兼容外部 API / 本地 vLLM 等 OpenAI Chat Completions 协议
+#   [1] 大模型分析: 兼容外部 API / 昇腾宿主机上已启动的 vLLM 服务
 #   [2] 手动填写:   保留原交互式人工定义流程
 #
 # 大模型模式环境变量:
 #   OP_SPEC_MODE=llm|manual        # 跳过交互选择, 直接进入指定模式
 #   OP_DESC_LLM="..."              # 大模型模式: 算子需求描述
 #   ITOOL_LLM_API_BASE=...         # 默认 http://127.0.0.1:8000/v1
-#   ITOOL_LLM_API_KEY=...          # 外部 API 使用; 本地 vLLM 可留空
+#   ITOOL_LLM_API_KEY=...          # 外部 API 使用; 宿主机 vLLM 服务可留空
 #   ITOOL_LLM_MODEL=...            # vLLM served model name 或外部模型名
 #   ITOOL_LLM_TIMEOUT=...          # 默认 120s
 #
@@ -227,7 +227,7 @@ fi
 [ -n "$MODEL" ] || { echo -e "${RED}模型名不能为空。${RESET}" >&2; exit 1; }
 
 if [ -z "$API_KEY" ]; then
-    read_secret "API Key(本地 vLLM 可留空)" ""
+    read_secret "API Key(宿主机已启动的 vLLM 服务可留空)" ""
     API_KEY="$REPLY"
 fi
 

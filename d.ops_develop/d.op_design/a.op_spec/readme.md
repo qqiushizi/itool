@@ -30,22 +30,23 @@ bash d.ops_develop/d.op_design/a.op_spec/run.sh
 兼容：
 
 - 外部 API
-- 本地 vLLM
+- 使用工具的昇腾宿主机上已启动的 vLLM 服务
 - 其他暴露 `/v1/chat/completions` 的服务
 
 常用环境变量：
 
 ```bash
 ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1
-ITOOL_LLM_API_KEY=sk-xxxx   # 本地 vLLM 可留空
+ITOOL_LLM_API_KEY=sk-xxxx   # 宿主机 vLLM 服务可留空
 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
 ITOOL_LLM_TIMEOUT=120
 ```
 
-本地 vLLM-ascend 示例：
+昇腾宿主机上已有 vLLM-ascend 服务时：
 
 ```bash
 export ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1
+# 在容器/宿主机上运行时，127.0.0.1 指向这台昇腾宿主机自身
 export ITOOL_LLM_MODEL=/path/to/model
 
 bash d.ops_develop/d.op_design/a.op_spec/run.sh

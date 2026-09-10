@@ -241,10 +241,10 @@ bash d.ops_develop/d.op_design/a.op_spec/run.sh
 - `[1] 大模型分析`
 - `[2] 手动填写`
 
-大模型模式支持外部 API 和本地 vLLM，统走 OpenAI Chat Completions 协议：
+大模型模式支持外部 API 和使用工具的昇腾宿主机上已启动的 vLLM 服务，统走 OpenAI Chat Completions 协议：
 
 ```bash
-# 本地 vLLM-ascend
+# 昇腾宿主机上的 vLLM-ascend 服务
 ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/a.op_spec/run.sh
 
 # 外部 API

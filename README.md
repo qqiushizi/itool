@@ -101,7 +101,7 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 ```
 d.ops_develop/
 ├── a.image_container/                 ① 镜像拉取 + 容器实例化
-│   ├── run.sh                         选 tag / docker pull / 生成 start_container.sh
+│   ├── run.sh                         输入镜像地址 / 检查或拉取 / 生成 start_container.sh
 │   └── readme.md                      功能说明
 ├── b.env_check/                       ② 容器内环境检查（只读）
 │   ├── run.sh                         芯片识别 + 版本兼容矩阵 + 建议

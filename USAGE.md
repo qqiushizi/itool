@@ -122,30 +122,42 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 bash d.ops_develop/a.image_container/run.sh
 ```
 
-脚本先完成镜像选择/拉取，再自动进入容器实例化流程。
-
-**镜像阶段**：自动查询 `quay.io/ascend/cann` tag → 按 芯片 / CANN / 系统 / Python 筛选 → 编号选择：
-
-```
-按需筛选(直接回车=不限):
-  芯片(910b/910a/950/310p, 留空=全部) []: 910b
-  CANN 版本(如 8.1.rc1 / 9.0.0, 留空=全部) []:
-  系统(如 ubuntu22.04 / openeuler22.03, 留空=全部) []:
-  Python(如 py3.10 / py3.11, 留空=全部) []:
-```
-
-拉取后自动打本地短标签。也可直接指定：
+脚本只问一个关键信息：镜像地址。也支持非交互：
 
 ```bash
-IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 \
-NAME=asc_dev WORK_DIR=/data/ops SHM_SIZE=16g \
-bash d.ops_develop/a.image_container/run.sh
+IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
+
+bash d.ops_develop/a.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10
 ```
 
-> 网络健壮性：优先 quay.io API / Registry v2 API 并重试；失败时可 `[1] 重试`、`[2] 内置常见 tag 列表`、`[3] 手动输入镜像`。
+自动流程：
 
-**容器阶段**：收集容器名 / 工作目录 / 共享内存，枚举 `/dev/davinci*` 设备，生成 `start_container.sh` 并立即启动。宿主机工作目录挂载到容器 `/workspace`，后续容器内安装的 CANN 也放在这里，可持久保留。
+1. `docker image inspect` 检查本机是否已有该镜像
+2. 不存在则自动 `docker pull`
+3. 获取镜像稳定 ID
+4. 自动检测当前机器存在的 `/dev/davinci*`、驱动目录、`dcmi`、`npu-smi`
+5. 创建工作目录并生成 `start_container.sh`
+6. 立即启动容器
 
+默认宿主机工作目录：
+
+```text
+~/ascend_ops_workspace
+```
+
+挂载关系：
+
+```text
+宿主机 ~/ascend_ops_workspace  →  容器 /workspace
+```
+
+可通过 `WORK_DIR` 覆盖：
+
+```bash
+WORK_DIR=/data/ops bash d.ops_develop/a.image_container/run.sh
+```
+
+生成的 `start_container.sh` 是**当前机器专用**模板；同一台机器反复重启容器可直接使用，换机器应重新运行 `a.image_container`。
 ### 3.2 ② 容器内环境检查（只读，只给建议）
 
 启动容器后进入容器：

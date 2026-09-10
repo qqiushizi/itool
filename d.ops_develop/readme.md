@@ -9,7 +9,7 @@
 ```
 d.ops_develop/
 ├── a.image_container/                 ① 镜像拉取 + 容器实例化
-│   ├── run.sh                 选择镜像 tag / docker pull / 生成 start_container.sh
+│   ├── run.sh                 输入镜像地址 / 检查或拉取 / 生成 start_container.sh
 │   └── readme.md              功能说明
 ├── b.env_check/                       ② 容器内环境检查
 │   ├── run.sh                 芯片型号识别 + 软件版本匹配矩阵，只读输出建议
@@ -55,8 +55,8 @@ bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh AddCustom
 ## 说明
 
 - 所有脚本尽量少依赖、纯 bash + 标准命令，面向昇腾客户机（Linux），兼容 bash 3.2。
-- `a.image_container` 是工作流起点：拉镜像、建容器，并把宿主机工作目录挂载到容器 `/workspace`。
+- `a.image_container` 是工作流起点：用户提供镜像地址，脚本检查/拉取镜像，并把宿主机工作目录挂载到容器 `/workspace`。
 - `b.env_check` 只做只读检查，不修复、不安装；缺 CANN 时只提示进入 `c.install_cann`。
 - `c.install_cann` 默认只能在容器内执行，默认安装到 `/workspace/Ascend/ascend-toolkit-<version>`，容器重建后仍保留。
 - `c.install_cann` 只安装 toolkit，不安装 kernels/ops、合一包和驱动。
-- `a.image_container` 会在工作目录生成 `start_container.sh`，客户可自行修改后反复使用。
+- `a.image_container` 会在 `~/ascend_ops_workspace`（可用 `WORK_DIR` 覆盖）生成当前机器专用的 `start_container.sh`，同一台机器可反复使用；换机器应重新运行本步骤。

@@ -278,4 +278,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 拉取镜像 → bash d.ops_develop/b.env_setup/b.pull_image/run.sh"
+echo "下一步: 镜像拉取 + 容器实例化 → bash d.ops_develop/c.container/run.sh"

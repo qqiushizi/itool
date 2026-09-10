@@ -103,18 +103,19 @@ d.ops_develop/
 ├── a.env_check/                       环境检查(宿主机 / 容器通用, 只读)
 │   ├── run.sh           ① 环境检查(芯片识别 + 版本兼容性矩阵)
 │   └── readme.md         功能说明
-├── b.env_setup/                       环境搭建(下载 / 安装 / 镜像 / 容器)
-│   ├── a.install_cann/               ② CANN toolkit 安装(下载+安装合并, 仅 toolkit)
-│   │   ├── a.cann-9.1.0/run.sh        9.1.0 (推荐)
-│   │   ├── b.cann-9.0.0/run.sh        9.0.0
-│   │   ├── c.cann-8.2.RC1/run.sh      8.2.RC1 (旧芯片兼容)
-│   │   ├── d.cann-8.1.RC1/run.sh      8.1.RC1 (旧芯片兼容)
-│   │   └── readme.md                  版本说明
-│   ├── b.pull_image/run.sh          ③ 镜像拉取(quay.io 可视化选 tag)
-│   └── c.run_container/run.sh       ④ 容器实例化(交互输入 + 生成可编辑 start_container.sh)
-├── c.design/                         ⑤ 算子设计需求分析
+├── b.env_setup/                       CANN toolkit 安装(下载 + 安装合并)
+│   └── a.install_cann/
+│       ├── a.cann-9.1.0/run.sh        9.1.0 (推荐)
+│       ├── b.cann-9.0.0/run.sh        9.0.0
+│       ├── c.cann-8.2.RC1/run.sh      8.2.RC1 (旧芯片兼容)
+│       ├── d.cann-8.1.RC1/run.sh      8.1.RC1 (旧芯片兼容)
+│       └── readme.md                  版本说明
+├── c.container/                       ③ 镜像拉取 + 容器实例化(合并)
+│   ├── run.sh                         选 tag / docker pull / 生成起容器脚本
+│   └── readme.md                      功能说明
+├── d.design/                          ④ 算子设计需求分析
 │   └── a.op_spec/run.sh              交互收集(功能/数据类型/典型shape) → 生成 op.json + op_spec.md
-└── d.scaffold/                       ⑥ 算子脚手架
+└── e.scaffold/                        ⑤ 算子脚手架
     ├── a.msopgen/run.sh              基于 msopgen(轻量) 生成算子工程
     ├── b.ops_transformer/run.sh      拉取 ops-transformer(完善) 源码 + 编译指导
     └── c.torchbind/run.sh            torchbind(CPU+NPU) / vllm_ascend 接入工程
@@ -129,23 +130,20 @@ bash d.ops_develop/a.env_check/run.sh
 # ② CANN toolkit 安装(选择版本, 下载+安装一步完成, 仅 toolkit)
 bash d.ops_develop/b.env_setup/a.install_cann/a.cann-9.1.0/run.sh
 
-# ③ 拉镜像(quay.io 可视化选择 tag)
-bash d.ops_develop/b.env_setup/b.pull_image/run.sh
-
-# ④ 实例化容器(输入容器名等, 生成 start_container.sh 可自行修改)
-bash d.ops_develop/b.env_setup/c.run_container/run.sh
+# ③ 镜像拉取 + 容器实例化(合并)
+bash d.ops_develop/c.container/run.sh
 
 # 进入容器后再次运行同一个环境检查, 确认容器内版本也匹配
 # docker exec -it asc_dev bash
 # bash d.ops_develop/a.env_check/run.sh
 
-# ⑤ 需求分析 → 生成 op.json / op_spec.md
-bash d.ops_develop/c.design/a.op_spec/run.sh
+# ④ 需求分析 → 生成 op.json / op_spec.md
+bash d.ops_develop/d.design/a.op_spec/run.sh
 
-# ⑥ 生成工程
-bash d.ops_develop/d.scaffold/a.msopgen/run.sh op.json        # msopgen 轻量
-bash d.ops_develop/d.scaffold/b.ops_transformer/run.sh        # ops-transformer 完善
-bash d.ops_develop/d.scaffold/c.torchbind/run.sh AddCustom    # torchbind 接入
+# ⑤ 生成工程
+bash d.ops_develop/e.scaffold/a.msopgen/run.sh op.json        # msopgen 轻量
+bash d.ops_develop/e.scaffold/b.ops_transformer/run.sh        # ops-transformer 完善
+bash d.ops_develop/e.scaffold/c.torchbind/run.sh AddCustom    # torchbind 接入
 ```
 
 ---

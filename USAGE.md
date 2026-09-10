@@ -184,13 +184,15 @@ CANN_BASE_URL='https://内网镜像/CANN/CANN%20__VER__' bash d.ops_develop/b.en
 
 > 当前已按官网资源探测可用的 toolkit 版本：`9.1.0`、`9.0.0`、`8.2.RC1`、`8.1.RC1`。
 
-### 3.3 ③ 镜像拉取（quay.io 可视化选 tag）
+### 3.3 ③ 镜像拉取 + 容器实例化（合并）
 
 ```bash
-bash d.ops_develop/b.env_setup/b.pull_image/run.sh
+bash d.ops_develop/c.container/run.sh
 ```
 
-交互流程：自动查询 `quay.io/ascend/cann` 全部 tag → 按 芯片/版本/系统/Python 筛选 → 编号列表选择：
+该脚本先完成镜像选择/拉取，再自动进入容器实例化流程。
+
+**镜像阶段**：自动查询 `quay.io/ascend/cann` 全部 tag → 按 芯片/版本/系统/Python 筛选 → 编号列表选择：
 
 ```
 按需筛选(直接回车=不限):
@@ -207,27 +209,24 @@ bash d.ops_develop/b.env_setup/b.pull_image/run.sh
   选择编号 [3]:
 ```
 
-拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：`IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash d.ops_develop/b.env_setup/b.pull_image/run.sh`。
+拉取后自动打本地短标签 `cann-910b:9.0.0`。也可直接指定：
+
+```bash
+IMAGE=quay.io/ascend/cann:8.1.rc1-910b-ubuntu22.04-py3.10 bash d.ops_develop/c.container/run.sh
+```
 
 > 网络健壮性：脚本会依次尝试 quay.io 官方 API / Docker Registry v2 API 并自动重试；若都失败，会给出兜底选项——`[1] 重试` / `[2] 用内置常见 tag 列表` / `[3] 手动输入镜像`，无需手动排查。
 
-### 3.4 ④ 容器实例化（交互 + 生成可编辑起容器脚本）
-
-```bash
-bash d.ops_develop/b.env_setup/c.run_container/run.sh
-```
-
-交互收集镜像/容器名/工作目录/共享内存，自动枚举 `/dev/davinci*` 设备，并生成 **`start_container.sh`**（客户可自行修改后重复执行），随后立即启动容器：
+**容器阶段**：收集容器名/工作目录/共享内存，自动枚举 `/dev/davinci*` 设备，生成 **`start_container.sh`** 并立即启动：
 
 ```
-镜像 [cann-910b:8.1.rc1]:
 容器名 [asc_dev]:
 工作目录(映射到容器 /workspace) [/data/ops]:
 共享内存(--shm-size, 如 16g) [16g]:
 ✔ 已生成起容器脚本: /data/ops/start_container.sh
 ```
 
-改完直接 `bash start_container.sh` 即可重建容器；进入容器后重新执行同一个环境检查（3.1）确认版本：
+改完直接 `bash start_container.sh` 即可重建容器；进入容器后重新执行环境检查（3.1）：
 
 ```bash
 docker exec -it asc_dev bash
@@ -235,10 +234,10 @@ docker exec -it asc_dev bash
 bash d.ops_develop/a.env_check/run.sh
 ```
 
-### 3.5 ⑤ 算子需求分析 → 生成 op.json
+### 3.4 ④ 算子需求分析 → 生成 op.json
 
 ```bash
-bash d.ops_develop/c.design/a.op_spec/run.sh
+bash d.ops_develop/d.design/a.op_spec/run.sh
 ```
 
 交互示例（回车用默认值）：
@@ -258,17 +257,17 @@ bash d.ops_develop/c.design/a.op_spec/run.sh
 
 生成 `op_design_MatMulCustom/op.json`（msopgen 格式）和 `op_spec.md`。
 
-### 3.6 ⑥ 生成算子工程 / 接入
+### 3.5 ⑤ 生成算子工程 / 接入
 
 ```bash
 # 轻量: msopgen 生成 AscendC 工程
-bash d.ops_develop/d.scaffold/a.msopgen/run.sh op_design_MatMulCustom/op.json
+bash d.ops_develop/e.scaffold/a.msopgen/run.sh op_design_MatMulCustom/op.json
 
 # 完善: 拉取 ops-transformer 算子库(官方 gitcode)
-bash d.ops_develop/d.scaffold/b.ops_transformer/run.sh
+bash d.ops_develop/e.scaffold/b.ops_transformer/run.sh
 
 # 接入: torchbind(CPU + NPU) 工程
-bash d.ops_develop/d.scaffold/c.torchbind/run.sh MatMulCustom
+bash d.ops_develop/e.scaffold/c.torchbind/run.sh MatMulCustom
 # 产物: MatMulCustom.cpp / setup.py / MatMulCustom_npu.cpp / setup_npu.py / README.md
 ```
 

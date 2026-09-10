@@ -18,7 +18,7 @@ ARCH_IN="${2:-910B}"
 ARCH=$(printf '%s' "$ARCH_IN" | tr '[:upper:]' '[:lower:]')
 OUT_DIR="${OUT_DIR:-op_workspace}"
 
-[ -f "$OP_JSON" ] || { echo -e "${RED}找不到 $OP_JSON, 请先运行 c.design/a.op_spec 生成。${RESET}" >&2; exit 1; }
+[ -f "$OP_JSON" ] || { echo -e "${RED}找不到 $OP_JSON, 请先运行 d.design/a.op_spec 生成。${RESET}" >&2; exit 1; }
 
 # ---- 定位 msopgen ----
 MSOPGEN="$(command -v msopgen 2>/dev/null || true)"

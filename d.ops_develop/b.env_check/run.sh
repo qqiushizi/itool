@@ -249,29 +249,42 @@ ver_key() {
     printf '%s' "$1" | awk -F. '{printf "%012d%012d%012d", ($1+0), ($2+0), ($3+0)}'
 }
 
-# 收集一个版本文件；若它是当前最高版本，则暂存为最佳识别结果
 BEST_VER=""
 BEST_KEY=""
 BEST_FILE=""
 BEST_DIR=""
-consider_version_file() {
-    local vfile="$1" v key
-    v=$(parse_version_file "$vfile") || return 0
+record_version() {
+    local v="$1" file="$2" dir="$3" key
     key=$(ver_key "$v")
     if [ -z "$BEST_KEY" ]; then
         BEST_KEY="$key"
         BEST_VER="$v"
-        BEST_FILE="$vfile"
-        BEST_DIR=$(dirname "$vfile")
+        BEST_FILE="$file"
+        BEST_DIR="$dir"
     elif [[ "$key" > "$BEST_KEY" ]]; then
         BEST_KEY="$key"
         BEST_VER="$v"
-        BEST_FILE="$vfile"
-        BEST_DIR=$(dirname "$vfile")
+        BEST_FILE="$file"
+        BEST_DIR="$dir"
     fi
 }
 
-# 4) 先确认“当前激活/常用”目录中的版本文件；若这里已有版本，则不再被其他旧版本干扰
+# 从文件中解析版本并记录
+consider_version_file() {
+    local vfile="$1" v
+    v=$(parse_version_file "$vfile") || return 0
+    record_version "$v" "$vfile" "$(dirname "$vfile")"
+}
+
+# 从目录名中解析版本并记录，例如 /usr/local/Ascend/cann-9.1.0
+consider_dir_version() {
+    local d="$1" v
+    v=$(printf '%s' "$d" | grep -oiE 'cann-[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?' | head -1 | sed 's/^cann-//' )
+    [ -z "$v" ] && v=$(printf '%s' "$d" | grep -oE 'ascend-toolkit/[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?' | head -1 | sed 's#.*/##')
+    [ -n "$v" ] && record_version "$v" "" "$d"
+}
+
+# 4) 高优先级目录，直接认根目录 version.cfg / version / version.info
 PRIORITY_DIRS=()
 for e in ASCEND_TOOLKIT_HOME ASCEND_HOME_PATH; do
     pv="$(envval "$e")"
@@ -281,23 +294,47 @@ PRIORITY_DIRS+=("/usr/local/Ascend/ascend-toolkit/latest")
 
 for d in "${PRIORITY_DIRS[@]}"; do
     [ -n "$d" ] && [ -d "$d" ] || continue
-    for vf in "$d/version.cfg" "$d/version.info" "$d/version"; do
+    for vf in "$d/version.cfg" "$d/version" "$d/version.info"; do
         consider_version_file "$vf"
     done
     [ -n "$BEST_VER" ] && break
 done
 
-# 5) 若当前激活目录仍无法识别，再从所有候选目录中递归查找，并取最高版本
+# 5) 所有候选目录，只认根目录的 CANN 版本文件；version.info 放在 version.cfg/version 之后降低权重
+if [ -z "$BEST_VER" ]; then
+    for d in "${UNIQ_DIRS[@]}"; do
+        [ -d "$d" ] || continue
+        for vf in "$d/version.cfg" "$d/version"; do
+            consider_version_file "$vf"
+        done
+    done
+fi
+if [ -z "$BEST_VER" ]; then
+    for d in "${UNIQ_DIRS[@]}"; do
+        [ -d "$d" ] || continue
+        consider_version_file "$d/version.info"
+    done
+fi
+
+# 6) 仍无法确定时，递归查找 version.cfg / version。
+#    这里不递归 version.info，避免把 mindstudio-debugger 等子组件版本误认为 CANN。
 if [ -z "$BEST_VER" ]; then
     for d in "${UNIQ_DIRS[@]}"; do
         [ -d "$d" ] || continue
         while IFS= read -r vf; do
             consider_version_file "$vf"
-        done < <(find -H "$d" -maxdepth 4 -type f \( -name 'version.cfg' -o -name 'version.info' -o -name 'version' \) 2>/dev/null | sort)
+        done < <(find -H "$d" -maxdepth 4 -type f \( -name 'version.cfg' -o -name 'version' \) 2>/dev/null | sort)
     done
 fi
 
-# 6) 应用最佳识别结果，并把 TOOLKIT_DIR 修正为版本文件真正所在目录
+# 7) 最后用目录名识别，例如 /usr/local/Ascend/cann-9.1.0 或 ascend-toolkit/9.1.0
+if [ -z "$BEST_VER" ]; then
+    for d in "${UNIQ_DIRS[@]}"; do
+        consider_dir_version "$d"
+    done
+fi
+
+# 8) 应用最佳识别结果，并把 TOOLKIT_DIR 修正为版本文件真正所在目录
 if [ -n "$BEST_VER" ]; then
     CANN_VER="$BEST_VER"
     VERSION_FILE="$BEST_FILE"
@@ -307,7 +344,11 @@ fi
 if [ -n "$CANN_VER" ]; then
     ok "识别到 CANN 版本: $CANN_VER"
     printf '  %-14s: %s\n' "安装目录" "$TOOLKIT_DIR"
-    printf '  %-14s: %s\n' "版本文件" "$VERSION_FILE"
+    if [ -n "$VERSION_FILE" ]; then
+        printf '  %-14s: %s\n' "版本文件" "$VERSION_FILE"
+    else
+        printf '  %-14s: %s\n' "版本来源" "目录名推断: $TOOLKIT_DIR"
+    fi
 else
     if [ -n "$TOOLKIT_DIR" ]; then
         warn "发现 CANN 安装目录, 但未在候选目录内找到 version.cfg / version.info / version"

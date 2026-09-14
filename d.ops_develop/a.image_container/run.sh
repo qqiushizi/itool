@@ -141,10 +141,14 @@ choose_official_tag() {
         warn "未查询到 $QUAY_REPO 可用 tag（可能当前机器无法访问 quay.io）。"
         REPLY=""
         while [ -z "$REPLY" ]; do
-            ask "请手动输入官方 tag，例如 $example" ""
+            ask "请手动输入官方 tag 或完整镜像，例如 $example" ""
             tag="$REPLY"
         done
-        SELECTED_IMAGE="$QUAY_REPO:$tag"
+        if printf '%s' "$tag" | grep -q '/'; then
+            SELECTED_IMAGE="$tag"
+        else
+            SELECTED_IMAGE="$QUAY_REPO:$tag"
+        fi
         return 0
     fi
 
@@ -241,20 +245,20 @@ if [ -z "$NAME_USE" ]; then
 fi
 
 WORK_DIR_USE="${WORK_DIR:-${ITOOL_WORK_DIR:-$HOME/ascend_ops_workspace}}"
-if [ -z "$WORK_DIR" ] && [ -z "$ITOOL_WORK_DIR" ]; then
+if [ -z "${WORK_DIR:-}" ] && [ -z "${ITOOL_WORK_DIR:-}" ]; then
     ask "宿主机工作目录(将挂载到 /workspace)" "$WORK_DIR_USE"
     WORK_DIR_USE="$REPLY"
 fi
 [ -z "$WORK_DIR_USE" ] && WORK_DIR_USE="$HOME/ascend_ops_workspace"
 
 SHM_SIZE_USE="${SHM_SIZE:-16g}"
-if [ -z "$SHM_SIZE" ]; then
+if [ -z "${SHM_SIZE:-}" ]; then
     ask "共享内存大小" "$SHM_SIZE_USE"
     SHM_SIZE_USE="$REPLY"
 fi
 
 NET_MODE_USE="${NET_MODE:-host}"
-if [ -z "$NET_MODE" ]; then
+if [ -z "${NET_MODE:-}" ]; then
     while true; do
         ask "网络模式(host/bridge)" "$NET_MODE_USE"
         NET_MODE_USE="$REPLY"

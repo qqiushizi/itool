@@ -36,14 +36,78 @@ have()    { command -v "$1" >/dev/null 2>&1; }
 envval()  { eval "printf '%s' \"\${$1:-}\""; }
 
 # ------------------------------------------------------------
+# 多 Python 识别辅助:
+# 客户容器里可能同时存在 /usr/bin/python3 和 /usr/local/python3.x 等
+# 多个解释器。脚本会优先选择“能成功 import torch”的那个解释器来做
+# 后续 torch / torch_npu 检测，避免明明装了 torch 却被判定为未安装。
+# ------------------------------------------------------------
+PY_CANDIDATES=()
+add_py_candidate() {
+    local p="$1" u
+    [ -n "$p" ] || return 0
+    [ -x "$p" ] || return 0
+    for u in "${PY_CANDIDATES[@]}"; do
+        [ "$u" = "$p" ] && return 0
+    done
+    PY_CANDIDATES+=("$p")
+}
+collect_python_candidates() {
+    local d f OLDIFS
+    add_py_candidate "$(command -v python3 2>/dev/null)"
+    add_py_candidate "$(command -v python 2>/dev/null)"
+
+    OLDIFS=$IFS
+    IFS=':'
+    for d in $PATH; do
+        [ -n "$d" ] || continue
+        [ -d "$d" ] || continue
+        for f in "$d"/python3 "$d"/python "$d"/python3.*; do
+            add_py_candidate "$f"
+        done
+    done
+    IFS=$OLDIFS
+
+    # 常见自定义/容器路径兜底
+    for f in /usr/local/bin/python3 /usr/bin/python3 /usr/local/python3.12.13/bin/python3 /usr/local/python3.10*/bin/python3 /usr/local/python*/bin/python3; do
+        add_py_candidate "$f"
+    done
+}
+python_import_ok() {
+    local p="$1"
+    [ -n "$p" ] || return 1
+    [ -x "$p" ] || return 1
+    [ -n "$("$p" -c 'import torch; print(torch.__version__, end="")' 2>/dev/null)" ] && return 0
+    return 1
+}
+resolve_active_python() {
+    local p default_py
+    default_py=$(command -v python3 2>/dev/null || true)
+    # 默认 python3 如果已能 import torch，优先保持，避免切换到其他环境。
+    if [ -n "$default_py" ] && [ -x "$default_py" ] && python_import_ok "$default_py"; then
+        PY_BIN="$default_py"
+        return 0
+    fi
+    # 否则在发现的候选解释器中选择第一个能 import torch 的。
+    for p in "${PY_CANDIDATES[@]}"; do
+        if python_import_ok "$p"; then
+            PY_BIN="$p"
+            return 0
+        fi
+    done
+    # 都不行就退回系统默认 python3，并如实报告。
+    PY_BIN="$default_py"
+}
+
+# ------------------------------------------------------------
 # 在已激活或未激活 CANN 环境下尝试执行 python 表达式, 返回 stdout。
 # 优先当前 shell, 失败时若有 set_env.sh 则在子 shell source 后重试。
 # ------------------------------------------------------------
 py_eval() {
-    local code="$1" out=""
-    out=$(python3 -c "$code" 2>/dev/null) && { printf '%s' "$out"; return 0; }
+    local code="$1" py out=""
+    py="${PY_BIN:-python3}"
+    out=$("$py" -c "$code" 2>/dev/null) && { printf '%s' "$out"; return 0; }
     if [ -n "$SETENV" ] && [ -f "$SETENV" ]; then
-        out=$( ( . "$SETENV" >/dev/null 2>&1; python3 -c "$code" 2>/dev/null ) )
+        out=$( ( . "$SETENV" >/dev/null 2>&1; "$py" -c "$code" 2>/dev/null ) )
         [ -n "$out" ] && { printf '%s' "$out"; return 0; }
     fi
     return 1
@@ -89,17 +153,26 @@ if [ -f /etc/os-release ]; then
 fi
 [ -z "$SYS_PRETTY" ] && SYS_PRETTY="unknown"
 
-PY_BIN=$(command -v python3 2>/dev/null || true)
+collect_python_candidates
+PY_BIN=""
 PY_VER=""
-if [ -n "$PY_BIN" ]; then
-    PY_VER=$(python3 -c 'import sys; print(sys.version.split()[0])' 2>/dev/null || true)
+resolve_active_python
+PY_BIN="${PY_BIN:-$(command -v python3 2>/dev/null || true)}"
+if [ -n "$PY_BIN" ] && [ -x "$PY_BIN" ]; then
+    PY_VER=$("$PY_BIN" -c 'import sys; print(sys.version.split()[0])' 2>/dev/null || true)
 fi
 [ -z "$PY_VER" ] && PY_VER="未知"
+PY_DEFAULT=$(command -v python3 2>/dev/null || true)
 
 printf '  %-14s: %s\n' "运行位置" "$RUN_POS"
 printf '  %-14s: %s\n' "主机名" "$(hostname 2>/dev/null || echo unknown)"
 printf '  %-14s: %s\n' "系统" "$SYS_PRETTY ($SYS_ARCH)"
 printf '  %-14s: %s\n' "Python" "${PY_VER:-未知}${PY_BIN:+  ($PY_BIN)}"
+if [ -n "$PY_BIN" ] && [ -n "$PY_DEFAULT" ] && [ "$PY_BIN" != "$PY_DEFAULT" ]; then
+    info "检测到多个 Python；已选择可导入 torch 的解释器: $PY_BIN"
+elif [ -n "$PY_BIN" ] && [ "$PY_BIN" = "$PY_DEFAULT" ]; then
+    info "torch 导入检测使用解释器: $PY_BIN"
+fi
 
 # ============================================================
 # 2. Ascend 芯片型号识别

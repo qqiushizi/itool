@@ -25,6 +25,9 @@ bash d.ops_develop/b.env_check/run.sh
 同时输出：
 
 - Python / CANN / torch / torch_npu 版本
+- 容器内若同时存在多个 Python（例如 `/usr/bin/python3` 与 `/usr/local/python3.x`），
+  脚本会优先选择**能成功 `import torch`** 的解释器做 torch / torch_npu 检测，并在报告中提示实际使用的解释器
+- 不会删除、重装或修改系统中已有的 Python
 - CANN 安装目录、版本文件、`set_env.sh` 激活脚本
 - CANN 版本识别会自动从 `ASCEND_HOME_PATH`、`ASCEND_TOOLKIT_HOME`、`ASCEND_OPP_PATH`
   以及 `/usr/local/Ascend` 下的目录查找 `version.cfg` / `version`

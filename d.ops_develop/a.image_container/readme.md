@@ -1,7 +1,22 @@
 # a.image_container — 镜像拉取 + 容器实例化
 
-> 算子开发工作流第 1 步：查询 `quay.io/ascend/cann` 官方 tag，客户可视化选择镜像；
+> 算子开发工作流第 1 步：从 quay.io 官方仓库查询 tag，客户可视化选择镜像；
 > 本机已有则复用，没有则 `docker pull`；生成当前机器专用的 `start_container.sh`，确认后再启动。
+
+## 支持的官方仓库
+
+运行脚本后可以选择：
+
+| 选项 | 仓库 | 用途 |
+|---|---|---|
+| A | `quay.io/ascend/vllm-ascend` | vLLM Ascend 推理容器 |
+| B | `quay.io/ascend/cann` | CANN 算子开发容器 |
+
+也可以通过环境变量直接指定：
+
+```bash
+QUAY_REPO=quay.io/ascend/vllm-ascend bash d.ops_develop/a.image_container/run.sh
+```
 
 ## 运行
 
@@ -11,40 +26,38 @@ bash d.ops_develop/a.image_container/run.sh
 
 交互流程：
 
-1. 查询官方仓库可用 tag
-2. 输入筛选关键字（例如 `9.1.0`、`910b`、`py3.10`、`devel`），选择 tag
-3. 配置容器名、宿主机工作目录、共享内存、网络模式、是否 `--privileged`
-4. 生成 `start_container.sh` 并预览
-5. 询问是否立即启动，默认 `N`
+1. 选择官方仓库：`vllm-ascend` / `cann`
+2. 查询官方仓库可用 tag
+3. 输入筛选关键字（例如 `v0.27`、`9.1.0`、`910b`、`py3.10`、`devel`），选择 tag
+4. 配置容器名、宿主机工作目录、共享内存、网络模式、是否 `--privileged`
+5. 生成 `start_container.sh`
+6. 询问是否立即启动，默认 `N`
 
 ## 非交互运行
 
-显式指定镜像：
+指定完整镜像：
 
 ```bash
-IMAGE=quay.io/ascend/cann:9.1.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
+IMAGE=quay.io/ascend/vllm-ascend:v0.27.1-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
 ```
 
-如果 `IMAGE` 只有 tag，会自动补 `quay.io/ascend/cann:` 前缀：
+指定仓库和 tag：
 
 ```bash
-IMAGE=9.1.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
+QUAY_REPO=quay.io/ascend/vllm-ascend IMAGE=v0.27.1-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
 ```
 
-也可以同时指定镜像和容器名：
-
-```bash
-bash d.ops_develop/a.image_container/run.sh   quay.io/ascend/cann:9.1.0-910b-ubuntu22.04-py3.10   asc_dev
-```
+只给 tag 时，默认通过 `QUAY_REPO` 补全仓库前缀；没有 `QUAY_REPO` 时会交互选择仓库。
 
 ## 自动流程
 
-1. 连接 `quay.io` API，查询 `ascend/cann` 仓库可达 tag
-2. 按关键字筛选并让用户选择
-3. 本机已存在该镜像则复用；不存在则执行 `docker pull`
-4. 获取镜像稳定 ID：`docker image inspect -f '{{.Id}}'`
-5. 检测当前机器的 NPU 设备与 Ascend 驱动挂载
-6. 生成容器启动脚本并询问是否立即执行
+1. 选择/确定 quay.io 官方仓库
+2. 连接 quay.io API 查询可达 tag
+3. 按关键字筛选并让用户选择
+4. 本机已存在该镜像则复用；不存在则执行 `docker pull`
+5. 获取镜像稳定 ID：`docker image inspect -f '{{.Id}}'`
+6. 检测当前机器的 NPU 设备与 Ascend 驱动挂载
+7. 生成容器启动脚本并询问是否立即执行
 
 ## 容器挂载
 
@@ -79,14 +92,16 @@ bash d.ops_develop/a.image_container/run.sh
 ## 常用环境变量
 
 ```bash
-CANN_TAG_FILTER=9.1.0 # 查询时预填筛选关键字
-IMAGE=...             # 显式指定镜像；只有 tag 时自动补官方前缀
-NAME=asc_dev          # 容器名
-WORK_DIR=/data/ops    # 宿主机工作目录
-SHM_SIZE=16g          # 共享内存
-NET_MODE=host         # host 或 bridge
-PRIVILEGED=yes        # yes 或 no
-EXTRA_ARGS=           # 额外 docker run 参数
+QUAY_REPO=quay.io/ascend/vllm-ascend  # 官方仓库，默认为 vllm-ascend；可选 quay.io/ascend/cann
+TAG_FILTER=v0.27                      # 查询时预填筛选关键字
+CANN_TAG_FILTER=                      # 兼容旧变量名
+IMAGE=...                             # 显式指定镜像；只有 tag 时自动补 QUAY_REPO 前缀
+NAME=asc_dev                          # 容器名
+WORK_DIR=/data/ops                    # 宿主机工作目录
+SHM_SIZE=16g                          # 共享内存
+NET_MODE=host                         # host 或 bridge
+PRIVILEGED=yes                        # yes 或 no
+EXTRA_ARGS=                           # 额外 docker run 参数
 ```
 
 ## 下一步

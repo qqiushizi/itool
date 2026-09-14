@@ -30,8 +30,8 @@ set -uo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; WHITE='\033[1;37m'; RESET='\033[0m'
 
-QUAY_REPO="quay.io/ascend/cann"
-QUAY_TAGS_URL="https://quay.io/api/v1/repository/ascend/cann/tag"
+QUAY_REPO="${QUAY_REPO:-}"
+QUAY_TAGS_URL=""
 TAG_LIMIT=100
 QUAY_CONNECT_TIMEOUT=5
 QUAY_MAX_TIME=10
@@ -57,6 +57,33 @@ ask_yes() {
 }
 yesno() {
     [ "$1" = "yes" ] || [ "$1" = "y" ] || [ "$1" = "Y" ] || [ "$1" = "YES" ] && return 0 || return 1
+}
+
+# 把 quay.io/ascend/xxx 转为 API 需要的 ascend/xxx
+quay_repo_path() {
+    local p="$1"
+    p="${p#https://}"; p="${p#http://}"; p="${p#quay.io/}"; p="${p%/}"
+    printf '%s' "$p"
+}
+set_quay_url() {
+    local path
+    path=$(quay_repo_path "$QUAY_REPO")
+    QUAY_TAGS_URL="https://quay.io/api/v1/repository/$path/tag"
+}
+choose_official_repo() {
+    while true; do
+        echo ""
+        echo -e "  ${CYAN}请选择要查询/拉取的官方 quay.io 仓库:${RESET}"
+        echo -e "    ${GREEN}A${RESET}) quay.io/ascend/vllm-ascend   (vLLM Ascend 推理容器)"
+        echo -e "    ${GREEN}B${RESET}) quay.io/ascend/cann          (CANN 算子开发容器)"
+        ask "请选择 (A/B)" "A"
+        case "$REPLY" in
+            a|A|1) QUAY_REPO="quay.io/ascend/vllm-ascend"; break ;;
+            b|B|2) QUAY_REPO="quay.io/ascend/cann"; break ;;
+            *) continue ;;
+        esac
+    done
+    set_quay_url
 }
 
 # ---------- 当前 itool 仓库根目录 ----------
@@ -97,23 +124,27 @@ fetch_official_tags() {
     while IFS= read -r tag; do
         [ -n "$tag" ] || continue
         TAGS+=("$tag")
-    done < <(printf '%s' "$body" | grep -oE '"name":[[:space:]]*"[^"]+"' 2>/dev/null | sed -E 's/.*"name":[[:space:]]*"([^"]+)".*//')
+    done < <(printf '%s' "$body" | grep -oE '"name":[[:space:]]*"[^"]+"' 2>/dev/null | sed -E 's/.*"name":[[:space:]]*"([^"]+)".*/\1/')
 }
 
 # ---------- 选择官方 tag ----------
 choose_official_tag() {
-    local keyword="${CANN_TAG_FILTER:-}"
-    local filtered=() i n tag
+    local keyword="${TAG_FILTER:-${CANN_TAG_FILTER:-}}"
+    local filtered=() i n tag example="9.1.0-910b-ubuntu22.04-py3.10"
     local show_count
 
+    case "$QUAY_REPO" in
+        *vllm*) example="v0.27.1" ;;
+    esac
+
     if [ ${#TAGS[@]} -eq 0 ]; then
-        warn "未查询到 quay.io/ascend/cann 可用 tag（可能当前机器无法访问 quay.io）。"
+        warn "未查询到 $QUAY_REPO 可用 tag（可能当前机器无法访问 quay.io）。"
         REPLY=""
         while [ -z "$REPLY" ]; do
-            ask "请手动输入官方 tag，例如 9.1.0-910b-ubuntu22.04-py3.10" ""
+            ask "请手动输入官方 tag，例如 $example" ""
             tag="$REPLY"
         done
-        SELECTED_IMAGE="quay.io/ascend/cann:$tag"
+        SELECTED_IMAGE="$QUAY_REPO:$tag"
         return 0
     fi
 
@@ -158,7 +189,7 @@ choose_official_tag() {
         ask "请选择 tag 编号" "1"
         n="$REPLY"
         if [ "$n" -ge 1 ] 2>/dev/null && [ "$n" -le "${#filtered[@]}" ]; then
-            SELECTED_IMAGE="quay.io/ascend/cann:${filtered[$((n-1))]}"
+            SELECTED_IMAGE="$QUAY_REPO:${filtered[$((n-1))]}"
             return 0
         fi
         echo -e "  ${RED}输入编号无效。${RESET}"
@@ -177,20 +208,28 @@ have docker || { echo -e "${RED}未找到 docker，请先安装。${RESET}" >&2;
 
 # ==== 1. 确定镜像 ====
 IMAGE_ARG="${1:-${IMAGE:-}}"
-if [ -n "$IMAGE_ARG" ]; then
-    if printf '%s' "$IMAGE_ARG" | grep -q '/'; then
-        IMAGE_TO_USE="$IMAGE_ARG"
-    else
-        IMAGE_TO_USE="$QUAY_REPO:$IMAGE_ARG"
-    fi
+
+# 明确给了完整镜像地址时，不再查询官方仓库。
+if [ -n "$IMAGE_ARG" ] && printf '%s' "$IMAGE_ARG" | grep -q '/'; then
+    IMAGE_TO_USE="$IMAGE_ARG"
     echo -e "  ${CYAN}[镜像]${RESET} $IMAGE_TO_USE"
 else
-    echo -e "  ${CYAN}正在查询 $QUAY_REPO 官方可用 tag ...${RESET}"
-    fetch_official_tags
-    [ ${#TAGS[@]} -gt 0 ] && echo -e "  ${GREEN}[查询成功]${RESET} 共发现 ${#TAGS[@]} 个 tag"
-    choose_official_tag
-    IMAGE_TO_USE="$SELECTED_IMAGE"
-    echo -e "  ${GREEN}[已选择镜像]${RESET} $IMAGE_TO_USE"
+    # 未指定官方仓库时，交互选择 vllm-ascend / cann，或使用 QUAY_REPO 环境变量。
+    [ -z "$QUAY_REPO" ] && choose_official_repo
+    [ -z "$QUAY_REPO" ] && { echo -e "  ${RED}未确定 quay.io 官方仓库。${RESET}" >&2; exit 1; }
+    set_quay_url
+
+    if [ -n "$IMAGE_ARG" ]; then
+        IMAGE_TO_USE="$QUAY_REPO:$IMAGE_ARG"
+        echo -e "  ${CYAN}[镜像]${RESET} $IMAGE_TO_USE"
+    else
+        echo -e "  ${CYAN}正在查询 $QUAY_REPO 官方可用 tag ...${RESET}"
+        fetch_official_tags
+        [ ${#TAGS[@]} -gt 0 ] && echo -e "  ${GREEN}[查询成功]${RESET} 共发现 ${#TAGS[@]} 个 tag"
+        choose_official_tag
+        IMAGE_TO_USE="$SELECTED_IMAGE"
+        echo -e "  ${GREEN}[已选择镜像]${RESET} $IMAGE_TO_USE"
+    fi
 fi
 
 # ==== 2. 容器配置 ====

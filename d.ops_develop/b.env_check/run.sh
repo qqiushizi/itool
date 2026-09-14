@@ -222,6 +222,15 @@ if [ ${#UNIQ_DIRS[@]} -gt 0 ]; then
 else
     bad "未发现 CANN toolkit 安装目录"
 fi
+# 仅保留可能是 CANN Toolkit 的目录；driver/firmware/nnal/hdk/opp 等目录不参与版本查找
+SEARCH_DIRS=()
+for d in "${UNIQ_DIRS[@]}"; do
+    case "$d" in
+        /usr/local/Ascend) continue ;;
+        */driver|*/driver/*|*/firmware|*/firmware/*|*/nnal|*/nnal/*|*/hdk|*/hdk/*|*/opp|*/opp/*) continue ;;
+    esac
+    SEARCH_DIRS+=("$d")
+done
 
 # 从文件内容解析 CANN Toolkit 版本
 # 优先读取 version.cfg 里的 toolkit_running_version，避免把 cann_running_version 等字段误报成 toolkit
@@ -303,7 +312,7 @@ done
 
 # 5) 所有候选目录，只认根目录的 CANN 版本文件；version.info 放在 version.cfg/version 之后降低权重
 if [ -z "$BEST_VER" ]; then
-    for d in "${UNIQ_DIRS[@]}"; do
+    for d in "${SEARCH_DIRS[@]}"; do
         [ -d "$d" ] || continue
         for vf in "$d/version.cfg" "$d/version"; do
             consider_version_file "$vf"
@@ -311,7 +320,7 @@ if [ -z "$BEST_VER" ]; then
     done
 fi
 if [ -z "$BEST_VER" ]; then
-    for d in "${UNIQ_DIRS[@]}"; do
+    for d in "${SEARCH_DIRS[@]}"; do
         [ -d "$d" ] || continue
         consider_version_file "$d/version.info"
     done
@@ -320,11 +329,11 @@ fi
 # 6) 仍无法确定时，递归查找 version.cfg / version。
 #    这里不递归 version.info，避免把 mindstudio-debugger 等子组件版本误认为 CANN。
 if [ -z "$BEST_VER" ]; then
-    for d in "${UNIQ_DIRS[@]}"; do
+    for d in "${SEARCH_DIRS[@]}"; do
         [ -d "$d" ] || continue
         while IFS= read -r vf; do
             consider_version_file "$vf"
-        done < <(find -H "$d" -maxdepth 4 -type f \( -name 'version.cfg' -o -name 'version' \) 2>/dev/null | sort)
+        done < <(find -H "$d" -maxdepth 4 \( -name driver -o -name firmware -o -name nnal -o -name hdk -o -name opp \) -prune -o -type f \( -name 'version.cfg' -o -name 'version' \) -print 2>/dev/null | sort)
     done
 fi
 

@@ -28,6 +28,7 @@ bash d.ops_develop/b.env_check/run.sh
 - CANN 安装目录、版本文件、`set_env.sh` 激活脚本
 - CANN 版本识别会自动从 `ASCEND_HOME_PATH`、`ASCEND_TOOLKIT_HOME`、`ASCEND_OPP_PATH`
   以及 `/usr/local/Ascend` 下的目录查找 `version.cfg` / `version`
+- `version.cfg` 中优先读取 `toolkit_running_version`，不会把 `cann_running_version` 等包版本字段误报为 toolkit
 - 根目录的 `version.info` 只作为低优先级补充；不会递归采用 `share/info/mindstudio-debugger`
   等子组件目录里的 `version.info`，避免把子模块版本误当成 CANN 版本
 - 多版本共存时，优先识别当前激活目录（`ASCEND_TOOLKIT_HOME` / `latest`）；无法定位时再取 CANN 版本号最高者

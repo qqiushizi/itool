@@ -223,22 +223,23 @@ else
     bad "未发现 CANN toolkit 安装目录"
 fi
 
-# 从文件内容解析 CANN 版本；兼容 version.cfg / version.info / version
+# 从文件内容解析 CANN Toolkit 版本
+# 优先读取 version.cfg 里的 toolkit_running_version，避免把 cann_running_version 等字段误报成 toolkit
 parse_version_file() {
-    local f="$1" line v
+    local f="$1" v
     [ -f "$f" ] || return 1
-    while IFS= read -r line || [ -n "$line" ]; do
-        line=$(printf '%s' "$line" | sed 's/[[:space:]]*#.*$//')
-        case "$line" in
-            *version*=*|*VERSION*=*)
-                v=$(printf '%s' "$line" | grep -iE '(version|ascend_toolkit_version|toolkit_version|cann_version)[^=]*=' | head -1 | sed 's/^[^=]*=//' | sed 's/^[[:space:]]*//')
-                v=$(printf '%s' "$v" | grep -oiE '[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?([.-]?B[0-9]+)?' | head -1)
-                [ -n "$v" ] && { printf '%s' "$v"; return 0; }
-                ;;
-        esac
-    done < "$f"
 
-    # 兜底：任意包含版本号的行
+    # 1) 首选：toolkit_running_version=9.1.0
+    v=$(grep -iE '^[[:space:]]*toolkit_running_version[[:space:]]*=' "$f" 2>/dev/null | head -1 | sed 's/^[^=]*=//' | sed 's/^[[:space:]]*//')
+    v=$(printf '%s' "$v" | grep -oiE '[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?([.-]?B[0-9]+)?' | head -1)
+    [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+
+    # 2) 次选：ascend_toolkit_version / toolkit_version / version
+    v=$(grep -iE '^[[:space:]]*(ascend_toolkit_version|toolkit_version|version)[[:space:]]*=' "$f" 2>/dev/null | head -1 | sed 's/^[^=]*=//' | sed 's/^[[:space:]]*//')
+    v=$(printf '%s' "$v" | grep -oiE '[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?([.-]?B[0-9]+)?' | head -1)
+    [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+
+    # 3) 兜底：文件第一处像版本号的片段
     v=$(grep -oiE '[0-9]+\.[0-9]+(\.[0-9]+)?([.-]?RC[0-9]+)?([.-]?B[0-9]+)?' "$f" 2>/dev/null | head -1)
     [ -n "$v" ] && { printf '%s' "$v"; return 0; }
     return 1
@@ -342,7 +343,7 @@ if [ -n "$BEST_VER" ]; then
 fi
 
 if [ -n "$CANN_VER" ]; then
-    ok "识别到 CANN 版本: $CANN_VER"
+    ok "识别到 CANN Toolkit 版本: $CANN_VER"
     printf '  %-14s: %s\n' "安装目录" "$TOOLKIT_DIR"
     if [ -n "$VERSION_FILE" ]; then
         printf '  %-14s: %s\n' "版本文件" "$VERSION_FILE"
@@ -351,10 +352,10 @@ if [ -n "$CANN_VER" ]; then
     fi
 else
     if [ -n "$TOOLKIT_DIR" ]; then
-        warn "发现 CANN 安装目录, 但未在候选目录内找到 version.cfg / version.info / version"
+        warn "发现 CANN Toolkit 安装目录, 但未找到可用的 version 文件"
         printf '  %-14s: %s\n' "目录" "$TOOLKIT_DIR"
     else
-        warn "未识别 CANN 版本文件"
+        warn "未识别 CANN Toolkit 版本文件"
     fi
 fi
 
@@ -511,7 +512,7 @@ elif [ "$TORCH_NPU_FOUND" = "0" ]; then
     warn "torch_npu 未识别, 跳过芯片级矩阵判断"
 elif [ -z "$CANN_VER" ]; then
     CANN_CHIP_OK=0
-    warn "CANN 未识别, 跳过芯片级矩阵判断"
+    warn "Toolkit 未识别, 跳过芯片级矩阵判断"
 fi
 
 # ============================================================
@@ -525,7 +526,7 @@ printf '  %-14s: %s\n' "运行位置" "$RUN_POS"
 printf '  %-14s: %s\n' "芯片型号" "$CHIP${CHIP_LIST:+  ($CHIP_LIST)}"
 printf '  %-14s: %s\n' "NPU 设备数" "$N_DEV"
 printf '  %-14s: %s\n' "Python" "${PY_VER:-未知}"
-printf '  %-14s: %s\n' "CANN" "${CANN_VER:-未识别}"
+printf '  %-14s: %s\n' "Toolkit" "${CANN_VER:-未识别}"
 printf '  %-14s: %s\n' "安装目录" "${TOOLKIT_DIR:-未发现}"
 printf '  %-14s: %s\n' "激活脚本" "${SETENV:-未找到}"
 printf '  %-14s: %s\n' "torch" "${TORCH_VER:-未安装}"

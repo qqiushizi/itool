@@ -33,7 +33,8 @@ CYAN='\033[0;36m'; WHITE='\033[1;37m'; RESET='\033[0m'
 QUAY_REPO="quay.io/ascend/cann"
 QUAY_TAGS_URL="https://quay.io/api/v1/repository/ascend/cann/tag"
 TAG_LIMIT=100
-MAX_PAGES=5
+QUAY_CONNECT_TIMEOUT=5
+QUAY_MAX_TIME=10
 
 have() { command -v "$1" >/dev/null 2>&1; }
 warn()  { echo -e "  ${YELLOW}[ 警告 ]${RESET} $1"; }
@@ -85,19 +86,18 @@ TAGS=()
 fetch_official_tags() {
     local page body
     TAGS=()
-    for page in 1 2 3 4 5; do
-        body=$(curl -fsS --max-time 30 "$QUAY_TAGS_URL/?limit=$TAG_LIMIT&page=$page&onlyActiveTags=true" 2>/dev/null) || break
-        [ -n "$body" ] || break
+    page=1
+    body=$(curl -fsS --connect-timeout "$QUAY_CONNECT_TIMEOUT" --max-time "$QUAY_MAX_TIME" "$QUAY_TAGS_URL/?limit=$TAG_LIMIT&page=$page&onlyActiveTags=true" 2>/dev/null) || true
+    if [ -z "$body" ]; then
+        warn "官方 tag 查询超时或不可达（连接时限 ${QUAY_CONNECT_TIMEOUT}s / 总时限 ${QUAY_MAX_TIME}s）。"
+        warn "为避免长时间卡住，已跳过远程查询，稍后可手动输入官方 tag。"
+        return 0
+    fi
 
-        while IFS= read -r tag; do
-            [ -n "$tag" ] || continue
-            TAGS+=("$tag")
-        done < <(printf '%s' "$body" | grep -oE '"name":[[:space:]]*"[^"]+"' 2>/dev/null | sed -E 's/.*"name":[[:space:]]*"([^"]+)".*/\1/')
-
-        if printf '%s' "$body" | grep -q '"has_additional":[[:space:]]*false'; then
-            break
-        fi
-    done
+    while IFS= read -r tag; do
+        [ -n "$tag" ] || continue
+        TAGS+=("$tag")
+    done < <(printf '%s' "$body" | grep -oE '"name":[[:space:]]*"[^"]+"' 2>/dev/null | sed -E 's/.*"name":[[:space:]]*"([^"]+)".*//')
 }
 
 # ---------- 选择官方 tag ----------

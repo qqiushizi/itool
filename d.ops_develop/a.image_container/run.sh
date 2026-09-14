@@ -35,6 +35,8 @@ QUAY_TAGS_URL=""
 TAG_LIMIT=100
 QUAY_CONNECT_TIMEOUT=5
 QUAY_MAX_TIME=10
+# quay.io 直连不通时按顺序尝试国内镜像；留空则禁止镜像 fallback
+QUAY_MIRROR="${QUAY_MIRROR:-m.daocloud.io/quay.io quay.nju.edu.cn}"
 
 have() { command -v "$1" >/dev/null 2>&1; }
 warn()  { echo -e "  ${YELLOW}[ 警告 ]${RESET} $1"; }
@@ -57,6 +59,24 @@ ask_yes() {
 }
 yesno() {
     [ "$1" = "yes" ] || [ "$1" = "y" ] || [ "$1" = "Y" ] || [ "$1" = "YES" ] && return 0 || return 1
+}
+pull_image_smart() {
+    local image="$1" mirror mimg
+    if docker pull "$image"; then
+        return 0
+    fi
+    [ -n "$QUAY_MIRROR" ] || return 1
+    for mirror in $QUAY_MIRROR; do
+        mimg="${mirror}/${image#quay.io/}"
+        [ "$mimg" = "$image" ] && continue
+        echo -e "  ${YELLOW}[镜像加速]${RESET} 尝试: $mimg"
+        if docker pull "$mimg"; then
+            docker tag "$mimg" "$image" || { echo -e "${RED}镜像 tag 失败: $mimg -> $image${RESET}" >&2; return 1; }
+            echo -e "  ${GREEN}[镜像加速]${RESET} 已打回官方 tag: $image"
+            return 0
+        fi
+    done
+    return 1
 }
 
 # 把 quay.io/ascend/xxx 转为 API 需要的 ascend/xxx
@@ -299,7 +319,7 @@ if docker image inspect "$IMAGE_TO_USE" >/dev/null 2>&1; then
     echo -e "  ${GREEN}[存在]${RESET} 本机已有该镜像，直接使用。"
 else
     echo -e "  ${YELLOW}[不存在]${RESET} 开始拉取镜像: $IMAGE_TO_USE"
-    docker pull "$IMAGE_TO_USE" || { echo -e "${RED}镜像拉取失败: $IMAGE_TO_USE${RESET}" >&2; exit 1; }
+    pull_image_smart "$IMAGE_TO_USE" || { echo -e "${RED}镜像拉取失败: $IMAGE_TO_USE${RESET}" >&2; exit 1; }
 fi
 
 IMAGE_ID=$(docker image inspect -f '{{.Id}}' "$IMAGE_TO_USE" 2>/dev/null || true)

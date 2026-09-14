@@ -93,6 +93,7 @@ bash d.ops_develop/a.image_container/run.sh
 
 ```bash
 QUAY_REPO=quay.io/ascend/vllm-ascend  # 官方仓库，默认为 vllm-ascend；可选 quay.io/ascend/cann
+QUAY_MIRROR=                          # 拉取失败时使用的国内镜像，默认 m.daocloud.io/quay.io 和 quay.nju.edu.cn
 TAG_FILTER=v0.27                      # 查询时预填筛选关键字
 CANN_TAG_FILTER=                      # 兼容旧变量名
 IMAGE=...                             # 显式指定镜像；只有 tag 时自动补 QUAY_REPO 前缀

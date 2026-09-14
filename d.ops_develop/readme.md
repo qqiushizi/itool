@@ -9,7 +9,7 @@
 ```
 d.ops_develop/
 ├── a.image_container/                 ① 镜像拉取 + 容器实例化
-│   ├── run.sh                 输入镜像地址 / 检查或拉取 / 生成 start_container.sh
+│   ├── run.sh                 查询官方 tag / 检查或拉取 / 生成 start_container.sh
 │   └── readme.md              功能说明
 ├── b.env_check/                       ② 容器内环境检查
 │   ├── run.sh                 芯片型号识别 + 软件版本匹配矩阵，只读输出建议
@@ -39,6 +39,7 @@ bash d.ops_develop/a.image_container/run.sh
 docker exec -it asc_dev bash
 
 # ② 容器内环境检查
+cd /workspace/itool
 bash d.ops_develop/b.env_check/run.sh
 
 # ③ 如果环境检查报告建议“安装/更换 CANN”，再执行（按需，可跳过）
@@ -56,7 +57,8 @@ bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh AddCustom
 ## 说明
 
 - 所有脚本尽量少依赖、纯 bash + 标准命令，面向昇腾客户机（Linux），兼容 bash 3.2。
-- `a.image_container` 是工作流起点：用户提供镜像地址，脚本检查/拉取镜像，并把宿主机工作目录挂载到容器 `/workspace`。
+- `a.image_container` 是工作流起点：查询 `quay.io/ascend/cann` 官方 tag，用户选定后检查/拉取镜像，把宿主机工作目录挂载到容器 `/workspace`，并把当前 itool 仓库挂载到 `/workspace/itool`。
+- `start_container.sh` 生成后不会自动执行，会先询问 `y/N`；确认后才启动容器。
 - `b.env_check` 只做只读检查，不修复、不安装；缺 CANN 时只提示进入 `c.install_cann`。
 - `c.install_cann` 默认只能在容器内执行，默认安装到 `/workspace/Ascend/ascend-toolkit-<version>`，容器重建后仍保留。
 - `c.install_cann` 只安装 toolkit，不安装 kernels/ops、合一包和驱动。

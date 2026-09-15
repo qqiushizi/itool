@@ -54,7 +54,7 @@ QUAY_REPO=quay.io/ascend/vllm-ascend IMAGE=v0.27.1-910b-ubuntu22.04-py3.10 bash 
 1. 选择/确定 quay.io 官方仓库
 2. 连接 quay.io API 查询可达 tag
 3. 按关键字筛选并让用户选择
-4. 本机已存在该镜像则复用；不存在则执行 `docker pull`
+4. 本机已存在该镜像则复用；不存在则优先通过国内镜像拉取并打回官方 tag
 5. 获取镜像稳定 ID：`docker image inspect -f '{{.Id}}'`
 6. 检测当前机器的 NPU 设备与 Ascend 驱动挂载
 7. 生成容器启动脚本并询问是否立即执行
@@ -93,7 +93,7 @@ bash d.ops_develop/a.image_container/run.sh
 
 ```bash
 QUAY_REPO=quay.io/ascend/vllm-ascend  # 官方仓库，默认为 vllm-ascend；可选 quay.io/ascend/cann
-QUAY_MIRROR=                          # 拉取失败时使用的国内镜像，默认 m.daocloud.io/quay.io 和 quay.nju.edu.cn
+QUAY_MIRROR=                          # 优先使用的国内镜像，默认 m.daocloud.io/quay.io 和 quay.nju.edu.cn；留空只直连官方源
 TAG_FILTER=v0.27                      # 查询时预填筛选关键字
 CANN_TAG_FILTER=                      # 兼容旧变量名
 IMAGE=...                             # 显式指定镜像；只有 tag 时自动补 QUAY_REPO 前缀

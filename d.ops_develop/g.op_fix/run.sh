@@ -63,12 +63,9 @@ printf '  %-16s: %s\n' "API" "$API_BASE"
 printf '  %-16s: %s\n' "Model" "$MODEL"
 echo ""
 
-OP_FIX_PROJECT="$PROJECT_DIR" \
-OP_FIX_API_BASE="$API_BASE" \
-OP_FIX_API_KEY="$API_KEY" \
-OP_FIX_MODEL="$MODEL" \
-OP_FIX_TIMEOUT="$TIMEOUT" \
-python3 - <<'PY'
+OP_FIX_PY=$(mktemp "${TMPDIR:-/tmp}/itool-op-fix.XXXXXX.py")
+trap 'rm -f "$OP_FIX_PY"' EXIT
+cat > "$OP_FIX_PY" <<'PY'
 import os, sys, re, json, pathlib, urllib.request, urllib.error, shutil, time
 
 project_dir = pathlib.Path(os.environ['OP_FIX_PROJECT']).resolve()
@@ -261,3 +258,9 @@ def main():
 
 main()
 PY
+OP_FIX_PROJECT="$PROJECT_DIR" \
+OP_FIX_API_BASE="$API_BASE" \
+OP_FIX_API_KEY="$API_KEY" \
+OP_FIX_MODEL="$MODEL" \
+OP_FIX_TIMEOUT="$TIMEOUT" \
+python3 "$OP_FIX_PY"

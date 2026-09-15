@@ -151,7 +151,7 @@ if [ -n "$(find "$OUT_DIR" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null || t
     echo -e "  ${YELLOW}msopgen 可能直接覆盖或报错；如需保留旧工程，请先重命名/清理该目录。${RESET}"
 fi
 
-"$MSOPGEN" gen -i "$OP_JSON" -f pytorch -c "$COMPUTE_UNIT" -out "$OUT_DIR"
+"$MSOPGEN" gen -i "$OP_JSON" -f tf -lan cpp -c "$COMPUTE_UNIT" -out "$OUT_DIR"
 
 echo ""
 echo -e "  ${GREEN}✔ 算子工程已生成:${RESET} $OUT_DIR"

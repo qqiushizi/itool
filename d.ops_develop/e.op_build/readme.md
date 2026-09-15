@@ -24,6 +24,12 @@ bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom
 bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json 910B
 ```
 
+工程生成方式固定为 AscendC/C++：
+
+```bash
+msopgen gen -i <op.json> -f tf -lan cpp -c <compute_unit> -out <输出目录>
+```
+
 arch 会自动转换成 msopgen 需要的格式：
 
 ```text

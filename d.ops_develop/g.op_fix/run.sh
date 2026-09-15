@@ -16,7 +16,7 @@ ask() {
     local p="$1" d="$2"
     printf "  %s [%s]: " "$p" "$d"
     IFS= read -r REPLY || REPLY=""
-    [ -z "$REPLY" ] && REPLY="$d"
+    [ -n "$REPLY" ] || REPLY="$d"
 }
 resolve_ops_root "$SCRIPT_DIR"
 

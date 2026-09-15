@@ -18,7 +18,7 @@ ask() {
     local p="$1" d="$2"
     printf "  %s [%s]: " "$p" "$d"
     IFS= read -r REPLY || REPLY=""
-    [ -z "$REPLY" ] && REPLY="$d"
+    [ -n "$REPLY" ] || REPLY="$d"
 }
 read_secret() {
     local p="$1" d="$2"
@@ -27,7 +27,7 @@ read_secret() {
     IFS= read -r REPLY || REPLY=""
     stty echo 2>/dev/null || true
     echo ""
-    [ -z "$REPLY" ] && REPLY="$d"
+    [ -n "$REPLY" ] || REPLY="$d"
 }
 
 resolve_ops_root "$SCRIPT_DIR"

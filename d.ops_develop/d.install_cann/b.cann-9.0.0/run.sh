@@ -39,7 +39,7 @@ ask()    { # $1=提示 $2=默认值 => $REPLY
     local prompt="$1" def="$2"
     printf "  %s [%s]: " "$prompt" "$def"
     IFS= read -r REPLY || REPLY=""
-    [ -z "$REPLY" ] && REPLY="$def"
+    [ -n "$REPLY" ] || REPLY="$def"
 }
 confirm(){ local ans; printf "  %s [y/N]: " "$1"; IFS= read -r ans || ans=""; case "$ans" in y|Y|yes|YES) return 0;; *) return 1;; esac; }
 inside_container() { [ -f /.dockerenv ] || grep -qE "docker|containerd|kubepods" /proc/1/cgroup 2>/dev/null; }

@@ -34,7 +34,7 @@ read_def() {  # $1=提示 $2=默认值 ; 结果放 $REPLY
     local prompt="$1" def="$2"
     printf "  %s [%s]: " "$prompt" "$def"
     IFS= read -r REPLY || REPLY=""
-    [ -z "$REPLY" ] && REPLY="$def"
+    [ -n "$REPLY" ] || REPLY="$def"
     return 0
 }
 read_secret() {  # $1=提示 $2=默认值 ; 结果放 $REPLY, 不回显
@@ -44,7 +44,7 @@ read_secret() {  # $1=提示 $2=默认值 ; 结果放 $REPLY, 不回显
     IFS= read -r REPLY || REPLY=""
     stty echo 2>/dev/null || true
     echo ""
-    [ -z "$REPLY" ] && REPLY="$def"
+    [ -n "$REPLY" ] || REPLY="$def"
     return 0
 }
 confirm() {

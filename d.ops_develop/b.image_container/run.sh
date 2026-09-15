@@ -45,13 +45,13 @@ ask() {
     local p="$1" d="$2"
     printf "  %s [%s]: " "$p" "$d"
     IFS= read -r REPLY || REPLY=""
-    [ -z "$REPLY" ] && REPLY="$d"
+    [ -n "$REPLY" ] || REPLY="$d"
 }
 ask_yes() {
     local p="$1" d="$2"
     printf "  %s [%s]: " "$p" "$d"
     IFS= read -r REPLY || REPLY=""
-    [ -z "$REPLY" ] && REPLY="$d"
+    [ -n "$REPLY" ] || REPLY="$d"
     case "$REPLY" in
         y|Y|yes|YES) return 0 ;;
         n|N|no|NO)   return 1 ;;

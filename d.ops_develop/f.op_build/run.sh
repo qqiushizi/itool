@@ -26,7 +26,7 @@ read_def() {
     local prompt="$1" def="$2"
     printf "  %s [%s]: " "$prompt" "$def"
     IFS= read -r REPLY || REPLY=""
-    [ -z "$REPLY" ] && REPLY="$def"
+    [ -n "$REPLY" ] || REPLY="$def"
 }
 
 # ---------- 统一工作区：d.ops_develop/workspace ----------

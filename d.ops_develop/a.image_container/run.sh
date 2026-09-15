@@ -62,21 +62,21 @@ yesno() {
 }
 pull_image_smart() {
     local image="$1" mirror mimg
-    # 客户现场访问 quay.io 经常超时；优先走国内镜像，失败后最后再试官方源。
-    if [ -n "$QUAY_MIRROR" ]; then
-        for mirror in $QUAY_MIRROR; do
-            mimg="${mirror}/${image#quay.io/}"
-            [ "$mimg" = "$image" ] && continue
-            echo -e "  ${YELLOW}[镜像加速]${RESET} 尝试: $mimg"
-            if docker pull "$mimg"; then
-                docker tag "$mimg" "$image" || { echo -e "${RED}镜像 tag 失败: $mimg -> $image${RESET}" >&2; return 1; }
-                echo -e "  ${GREEN}[镜像加速]${RESET} 已打回官方 tag: $image"
-                return 0
-            fi
-        done
+    if docker pull "$image"; then
+        return 0
     fi
-    echo -e "  ${YELLOW}[官方源]${RESET} 尝试: $image"
-    docker pull "$image"
+    [ -n "$QUAY_MIRROR" ] || return 1
+    for mirror in $QUAY_MIRROR; do
+        mimg="${mirror}/${image#quay.io/}"
+        [ "$mimg" = "$image" ] && continue
+        echo -e "  ${YELLOW}[镜像加速]${RESET} 尝试: $mimg"
+        if docker pull "$mimg"; then
+            docker tag "$mimg" "$image" || { echo -e "${RED}镜像 tag 失败: $mimg -> $image${RESET}" >&2; return 1; }
+            echo -e "  ${GREEN}[镜像加速]${RESET} 已打回官方 tag: $image"
+            return 0
+        fi
+    done
+    return 1
 }
 
 # 把 quay.io/ascend/xxx 转为 API 需要的 ascend/xxx

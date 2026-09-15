@@ -80,16 +80,26 @@ OP_SPEC_MODE=manual bash d.ops_develop/d.op_design/run.sh
 
 ## 输出
 
-任一方式都会生成：
+所有输出统一归档到：
 
 ```text
-op_design_<算子名>/
-├── op.json
-└── op_spec.md
+d.ops_develop/workspace/
+└── op_design_<算子名>/
+    ├── op.json
+    └── op_spec.md
+```
+
+也可以手动指定输出目录：
+
+```bash
+OUT_DIR=/workspace/my_op_design bash d.ops_develop/d.op_design/run.sh
 ```
 
 `op.json` 可直接交给下一步 msopgen 生成工程：
 
 ```bash
-bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh op_design_<算子名>/op.json
+bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_<算子名>/op.json
+
+# 或者直接自动查找 workspace 下的 op.json
+bash d.ops_develop/e.op_build/run.sh
 ```

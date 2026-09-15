@@ -641,7 +641,7 @@ fi
 [ -n "$RECOMMEND_NOTE" ] && echo -e "    → 版本建议:         $RECOMMEND_NOTE"
 if [ "$MATRIX_OK" = "1" ]; then
     echo -e "    → 需求分析:         bash d.ops_develop/d.op_design/run.sh"
-    echo -e "    → 生成工程:         bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh"
+    echo -e "    → 生成工程:         bash d.ops_develop/e.op_build/run.sh"
 fi
 echo ""
 echo "完成时间: $(date '+%F %T')"

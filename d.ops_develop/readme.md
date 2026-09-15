@@ -21,12 +21,11 @@ d.ops_develop/
 │   ├── d.cann-8.1.RC1/run.sh  8.1.RC1 (旧芯片兼容)
 │   └── readme.md              版本说明 + 容器内安装要求
 ├── d.op_design/                       ④ 算子设计需求分析 → op.json + op_spec.md
-│   ├── run.sh                 本地/外部 LLM / 手动填写 → op.json / op_spec.md
+│   ├── run.sh                 本地/外部 LLM / 手动填写 → workspace/op_design_<算子名>/
 │   └── readme.md              功能说明
-└── e.op_scaffold/                     ⑤ 算子脚手架
-    ├── a.msopgen/run.sh       msopgen 生成 AscendC 工程
-    ├── b.ops_transformer/run.sh 拉取 ops-transformer 源码
-    └── c.torchbind/run.sh     torchbind(CPU+NPU) 接入工程
+└── e.op_build/                        ⑤ 算子工程构建
+    ├── run.sh                 读取 workspace 下 op.json，用 msopgen 生成算子工程
+    └── readme.md              功能说明
 ```
 
 ## 快速开始
@@ -48,16 +47,15 @@ bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh
 # ④ 需求分析(本地/外部 LLM / 手动填写) → 生成 op.json / op_spec.md
 bash d.ops_develop/d.op_design/run.sh
 
-# ⑤ 生成工程
-bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh op.json   # msopgen 轻量
-bash d.ops_develop/e.op_scaffold/b.ops_transformer/run.sh   # ops-transformer 完善
-bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh AddCustom
+# ⑤ 生成算子工程
+bash d.ops_develop/e.op_build/run.sh   # 默认自动读取 workspace 下的 op.json
 ```
 
 ## 说明
 
 - 所有脚本尽量少依赖、纯 bash + 标准命令，面向昇腾客户机（Linux），兼容 bash 3.2。
 - `a.image_container` 是工作流起点：查询 quay.io 官方仓库（vllm-ascend / cann）tag 作为参考，以用户手动输入的 tag/完整镜像为准；随后检查/拉取镜像，通过 A/B 选项配置容器参数，把宿主机工作目录挂载到容器 `/workspace`，并把当前 itool 仓库挂载到 `/workspace/itool`。
+- d/e 功能的输入输出统一在 `d.ops_develop/workspace/` 下归档；d 生成 `op_design_<算子名>/`，e 生成 `op_build_<算子名>/`。
 - `a.image_container` 容器参数均可用环境变量预设（`NAME`、`WORK_DIR`、`SHM_SIZE`、`NET_MODE`、`PRIVILEGED`），未预设时用选项引导，不要求用户手输复杂参数。
 - `start_container.sh` 生成后不会自动执行，会先询问 `y/N`；确认后才启动容器。
 - `b.env_check` 只做只读检查，不修复、不安装；缺 CANN 时只提示进入 `c.install_cann`。

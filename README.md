@@ -113,12 +113,11 @@ d.ops_develop/
 │   ├── d.cann-8.1.RC1/run.sh          8.1.RC1 (旧芯片兼容)
 │   └── readme.md                      版本说明 + 容器内安装要求
 ├── d.op_design/                       ④ 算子设计需求分析
-│   ├── run.sh                  本地/外部 LLM / 手动填写 → op.json + op_spec.md
+│   ├── run.sh                  本地/外部 LLM / 手动填写 → workspace/op_design_<算子名>/
 │   └── readme.md              功能说明
-└── e.op_scaffold/                     ⑤ 算子脚手架
-    ├── a.msopgen/run.sh               msopgen 生成 AscendC 工程
-    ├── b.ops_transformer/run.sh       拉取 ops-transformer 源码
-    └── c.torchbind/run.sh             torchbind(CPU+NPU) / vllm_ascend 接入工程
+└── e.op_build/                        ⑤ 算子工程构建
+    ├── run.sh                  读取 workspace 下 op.json，用 msopgen 生成算子工程
+    └── readme.md              功能说明
 ```
 
 ### 完整示例
@@ -139,10 +138,8 @@ bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh
 # ④ 需求分析(本地/外部 LLM / 手动填写) → 生成 op.json / op_spec.md
 bash d.ops_develop/d.op_design/run.sh
 
-# ⑤ 生成工程
-bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh op.json        # msopgen 轻量
-bash d.ops_develop/e.op_scaffold/b.ops_transformer/run.sh        # ops-transformer 完善
-bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh AddCustom    # torchbind 接入
+# ⑤ 生成算子工程
+bash d.ops_develop/e.op_build/run.sh   # 默认自动读取 workspace 下的 op.json
 ```
 
 ---

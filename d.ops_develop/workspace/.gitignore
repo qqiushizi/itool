@@ -1,0 +1,4 @@
+# 只保留目录说明；实际生成物不进入 Git
+*
+!.gitignore
+!README.md

@@ -113,7 +113,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 ② b.env_check        容器内环境检查（只读，只给建议）
 ③ c.install_cann     按需安装/补装 CANN toolkit（检查通过可跳过）
 ④ d.op_design        需求分析 → op.json + op_spec.md
-⑤ e.op_scaffold      生成算子工程 / 接入
+⑤ e.op_build        用 msopgen 生成算子工程
 ```
 
 ### 3.1 ① 镜像拉取 + 容器实例化
@@ -252,22 +252,28 @@ OP_SPEC_MODE=llm LLM_PROVIDER=local OP_DESC_LLM='实现矩阵乘法 MatMulCustom
 OP_SPEC_MODE=llm LLM_PROVIDER=external OP_DESC_LLM='实现矩阵乘法 MatMulCustom' ITOOL_LLM_API_BASE=https://api.deepseek.com/v1 ITOOL_LLM_API_KEY=sk-xxxx ITOOL_LLM_MODEL=deepseek-chat bash d.ops_develop/d.op_design/run.sh
 ```
 
-生成：
+生成（默认在 `d.ops_develop/workspace/` 下归档）：
 
-- `op_design_<算子名>/op.json`
-- `op_spec.md`
+```text
+d.ops_develop/workspace/op_design_<算子名>/
+├── op.json
+└── op_spec.md
+```
 
-### 3.5 ⑤ 生成算子工程 / 接入
+### 3.5 ⑤ 生成算子工程
 
 ```bash
-# msopgen AscendC 工程
-bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh op_design_MatMulCustom/op.json
+# 自动在 d.ops_develop/workspace/ 下查找 op.json
+bash d.ops_develop/e.op_build/run.sh
 
-# ops-transformer 源码
-bash d.ops_develop/e.op_scaffold/b.ops_transformer/run.sh
+# 或明确指定 op.json
+bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_MatMulCustom/op.json
+```
 
-# torchbind(CPU + NPU)
-bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh MatMulCustom
+输出工程默认在：
+
+```text
+d.ops_develop/workspace/op_build_<算子名>/
 ```
 
 编译示例：

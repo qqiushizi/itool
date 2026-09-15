@@ -25,6 +25,26 @@ set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; WHITE='\033[1;37m'; RESET='\033[0m'
 
+# ---------- 统一工作区：d.ops_develop/workspace ----------
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "$PWD")
+REPO_ROOT="${ITOOL_REPO_ROOT:-}"
+if [ -z "$REPO_ROOT" ] && [ -f "$PWD/itool.sh" ]; then
+    REPO_ROOT="$PWD"
+fi
+if [ -z "$REPO_ROOT" ] && command -v git >/dev/null 2>&1; then
+    REPO_ROOT=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)
+fi
+if [ -z "$REPO_ROOT" ]; then
+    d="$SCRIPT_DIR"
+    while [ "$d" != "/" ]; do
+        if [ -f "$d/itool.sh" ]; then REPO_ROOT="$d"; break; fi
+        d=$(dirname "$d")
+    done
+fi
+[ -z "$REPO_ROOT" ] && REPO_ROOT="$SCRIPT_DIR"
+OPS_WORKSPACE="${OPS_WORKSPACE:-$REPO_ROOT/d.ops_develop/workspace}"
+mkdir -p "$OPS_WORKSPACE"
+
 read_def() {  # $1=提示 $2=默认值 ; 结果放 $REPLY
     local prompt="$1" def="$2"
     printf "  %s [%s]: " "$prompt" "$def"
@@ -85,7 +105,7 @@ manual_flow() {
     read_def "属性(可选, 格式 name:type:value, 逗号分隔, 如 alpha:float:1.0)" ""; OP_ATTRS="$REPLY"
 
     # ---- 输出目录 ----
-    OUT_DIR="${OUT_DIR:-./op_design_${OP_NAME}}"
+    OUT_DIR="${OUT_DIR:-$OPS_WORKSPACE/op_design_${OP_NAME}}"
     mkdir -p "$OUT_DIR"
 
     # 把多值数据写成 TSV, 交给 python 生成合法 JSON(避免引号转义问题)
@@ -179,7 +199,7 @@ PY
     echo -e "    $OUT_DIR/op_spec.md"
     echo ""
     echo "下一步生成工程:"
-    echo "  bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh $OUT_DIR/op.json"
+    echo "  bash d.ops_develop/e.op_build/run.sh $OUT_DIR/op.json"
 }
 
 # ---------- 主流程 ----------
@@ -467,7 +487,7 @@ else:
 PY
 
 OP_NAME=$(cat "$OP_NAME_FILE")
-OUT_DIR="${OUT_DIR:-./op_design_${OP_NAME}}"
+OUT_DIR="${OUT_DIR:-$OPS_WORKSPACE/op_design_${OP_NAME}}"
 
 if ! confirm "是否使用以上解析结果生成 op.json 和 op_spec.md?"; then
     if confirm "是否改为手动填写?"; then
@@ -517,4 +537,4 @@ echo -e "    $OUT_DIR/op.json"
 echo -e "    $OUT_DIR/op_spec.md"
 echo ""
 echo "下一步生成工程:"
-echo "  bash d.ops_develop/e.op_scaffold/a.msopgen/run.sh $OUT_DIR/op.json"
+echo "  bash d.ops_develop/e.op_build/run.sh $OUT_DIR/op.json"

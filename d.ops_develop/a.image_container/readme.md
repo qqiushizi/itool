@@ -27,9 +27,9 @@ bash d.ops_develop/a.image_container/run.sh
 交互流程：
 
 1. 选择官方仓库：`vllm-ascend` / `cann`
-2. 查询官方仓库可用 tag
-3. 输入筛选关键字（例如 `v0.27`、`9.1.0`、`910b`、`py3.10`、`devel`），选择 tag
-4. 配置容器名、宿主机工作目录、共享内存、网络模式、是否 `--privileged`
+2. 查询官方仓库可用 tag（仅作参考，最大查询 5 页；失败也不会卡住）
+3. **以手动输入为主**：输入 tag 或完整镜像均可以，也可输入编号选择参考项
+4. 通过 A/B/C/D 选项配置：容器名、宿主机工作目录、共享内存、网络模式、`--privileged`
 5. 生成 `start_container.sh`
 6. 询问是否立即启动，默认 `N`
 
@@ -52,8 +52,8 @@ QUAY_REPO=quay.io/ascend/vllm-ascend IMAGE=v0.27.1-910b-ubuntu22.04-py3.10 bash 
 ## 自动流程
 
 1. 选择/确定 quay.io 官方仓库
-2. 连接 quay.io API 查询可达 tag
-3. 按关键字筛选并让用户选择
+2. 连接 quay.io API 查询可达 tag（参考项，最多展示 20 个；可通过 `TAG_FILTER` 预筛）
+3. 用户手动输入 tag 或完整镜像，或按编号选择参考项
 4. 本机已存在该镜像则复用；不存在则执行 `docker pull`
 5. 获取镜像稳定 ID：`docker image inspect -f '{{.Id}}'`
 6. 检测当前机器的 NPU 设备与 Ascend 驱动挂载

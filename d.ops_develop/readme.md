@@ -9,7 +9,7 @@
 ```
 d.ops_develop/
 ├── a.image_container/                 ① 镜像拉取 + 容器实例化
-│   ├── run.sh                 选择 vllm-ascend/cann 官方仓库 / 查询 tag / 检查或拉取
+│   ├── run.sh                 查询官方 tag 作参考 / 手动输入 tag 镜像 / 检查或拉取
 │   └── readme.md              功能说明
 ├── b.env_check/                       ② 容器内环境检查
 │   ├── run.sh                 芯片型号识别 + 软件版本匹配矩阵，只读输出建议
@@ -57,7 +57,8 @@ bash d.ops_develop/e.op_scaffold/c.torchbind/run.sh AddCustom
 ## 说明
 
 - 所有脚本尽量少依赖、纯 bash + 标准命令，面向昇腾客户机（Linux），兼容 bash 3.2。
-- `a.image_container` 是工作流起点：选择 quay.io 官方仓库（vllm-ascend / cann）并查询 tag，用户选定后检查/拉取镜像，把宿主机工作目录挂载到容器 `/workspace`，并把当前 itool 仓库挂载到 `/workspace/itool`。
+- `a.image_container` 是工作流起点：查询 quay.io 官方仓库（vllm-ascend / cann）tag 作为参考，以用户手动输入的 tag/完整镜像为准；随后检查/拉取镜像，通过 A/B 选项配置容器参数，把宿主机工作目录挂载到容器 `/workspace`，并把当前 itool 仓库挂载到 `/workspace/itool`。
+- `a.image_container` 容器参数均可用环境变量预设（`NAME`、`WORK_DIR`、`SHM_SIZE`、`NET_MODE`、`PRIVILEGED`），未预设时用选项引导，不要求用户手输复杂参数。
 - `start_container.sh` 生成后不会自动执行，会先询问 `y/N`；确认后才启动容器。
 - `b.env_check` 只做只读检查，不修复、不安装；缺 CANN 时只提示进入 `c.install_cann`。
 - `c.install_cann` 默认只能在容器内执行，默认安装到 `/workspace/Ascend/ascend-toolkit-<version>`，容器重建后仍保留。

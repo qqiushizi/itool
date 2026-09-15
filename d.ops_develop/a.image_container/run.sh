@@ -34,7 +34,8 @@ QUAY_REPO="${QUAY_REPO:-}"
 QUAY_TAGS_URL=""
 TAG_LIMIT=100
 QUAY_CONNECT_TIMEOUT=5
-QUAY_MAX_TIME=10
+QUAY_MAX_TIME=8
+QUERY_PAGES=5
 # quay.io 直连不通时按顺序尝试国内镜像；留空则禁止镜像 fallback
 QUAY_MIRROR="${QUAY_MIRROR:-m.daocloud.io/quay.io quay.nju.edu.cn}"
 
@@ -133,36 +134,42 @@ TAGS=()
 fetch_official_tags() {
     local page body
     TAGS=()
-    page=1
-    body=$(curl -fsS --connect-timeout "$QUAY_CONNECT_TIMEOUT" --max-time "$QUAY_MAX_TIME" "$QUAY_TAGS_URL/?limit=$TAG_LIMIT&page=$page&onlyActiveTags=true" 2>/dev/null) || true
-    if [ -z "$body" ]; then
-        warn "官方 tag 查询超时或不可达（连接时限 ${QUAY_CONNECT_TIMEOUT}s / 总时限 ${QUAY_MAX_TIME}s）。"
-        warn "为避免长时间卡住，已跳过远程查询，稍后可手动输入官方 tag。"
-        return 0
-    fi
+    for ((page=1; page<=QUERY_PAGES; page++)); do
+        body=$(curl -fsSL --connect-timeout "$QUAY_CONNECT_TIMEOUT" --max-time "$QUAY_MAX_TIME" "$QUAY_TAGS_URL/?limit=$TAG_LIMIT&page=$page&onlyActiveTags=true" 2>/dev/null) || true
+        if [ -z "$body" ]; then
+            [ "$page" = "1" ] && warn "官方 tag 查询超时或不可达（连接时限 ${QUAY_CONNECT_TIMEOUT}s / 总时限 ${QUAY_MAX_TIME}s）。"
+            [ "$page" = "1" ] && warn "为避免长时间卡住，已跳过远程查询；稍后请直接手动输入 tag。"
+            break
+        fi
 
-    while IFS= read -r tag; do
-        [ -n "$tag" ] || continue
-        TAGS+=("$tag")
-    done < <(printf '%s' "$body" | grep -oE '"name":[[:space:]]*"[^"]+"' 2>/dev/null | sed -E 's/.*"name":[[:space:]]*"([^"]+)".*/\1/')
+        while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            TAGS+=("$tag")
+        done < <(printf '%s' "$body" | grep -oE '"name":[[:space:]]*"[^"]+"' 2>/dev/null | sed -E 's/.*"name":[[:space:]]*"([^"]+)".*/\1/')
+
+        if printf '%s' "$body" | grep -q '"has_additional":[[:space:]]*false'; then
+            break
+        fi
+    done
 }
 
-# ---------- 选择官方 tag ----------
+# ---------- 选择官方 tag（手动输入为主，查询只是辅助） ----------
 choose_official_tag() {
     local keyword="${TAG_FILTER:-${CANN_TAG_FILTER:-}}"
     local filtered=() i n tag choice example="9.1.0-910b-ubuntu22.04-py3.10"
-    local show_count
+    local display_count
 
     case "$QUAY_REPO" in
         *vllm*) example="v0.27.1" ;;
     esac
 
+    # 查询不到时直接手动输入
     if [ ${#TAGS[@]} -eq 0 ]; then
         warn "未查询到 $QUAY_REPO 可用 tag（可能当前机器无法访问 quay.io）。"
-        REPLY=""
-        while [ -z "$REPLY" ]; do
-            ask "请手动输入官方 tag 或完整镜像，例如 $example" ""
+        while true; do
+            ask "请输入要拉取的 tag 或完整镜像，例如 $example" ""
             tag="$REPLY"
+            [ -n "$tag" ] && break
         done
         if printf '%s' "$tag" | grep -q '/'; then
             SELECTED_IMAGE="$tag"
@@ -172,67 +179,51 @@ choose_official_tag() {
         return 0
     fi
 
-    while true; do
-        filtered=()
-        if [ -n "$keyword" ]; then
-            for tag in "${TAGS[@]}"; do
-                if printf '%s' "$tag" | grep -qiF "$keyword"; then
-                    filtered+=("$tag")
-                fi
-            done
-        else
-            filtered=("${TAGS[@]}")
-        fi
-
-        if [ ${#filtered[@]} -eq 0 ]; then
-            echo ""
-            echo -e "  ${YELLOW}没有匹配「$keyword」的 tag。${RESET}"
-            keyword=""
-            continue
-        fi
-
-        if [ ${#filtered[@]} -gt 20 ]; then
-            echo ""
-            echo -e "  ${YELLOW}匹配到 ${#filtered[@]} 个 tag，先展示前 20 个。${RESET}"
-            echo -e "  ${DIM}可输入 1-20 直接选择；也可输入新关键字继续筛选；直接回车选择第 1 个。${RESET}"
-            for ((i=0; i<20; i++)); do
-                printf '    %3d) %s\n' "$((i+1))" "${filtered[$i]}"
-            done
-            echo ""
-            ask "选择编号(1-20) 或筛选关键字" "1"
-            choice="$REPLY"
-            case "$choice" in
-                *[!0-9]*)
-                    keyword="$choice"
-                    continue
-                    ;;
-                *)
-                    if [ "$choice" -ge 1 ] 2>/dev/null && [ "$choice" -le 20 ] 2>/dev/null; then
-                        SELECTED_IMAGE="$QUAY_REPO:${filtered[$((choice-1))]}"
-                        return 0
-                    fi
-                    echo -e "  ${RED}编号无效。${RESET}"
-                    ;;
-            esac
-            continue
-        fi
-
-        echo ""
-        echo -e "  ${CYAN}匹配到以下官方 tag:${RESET}"
-        for ((i=0; i<${#filtered[@]}; i++)); do
-            printf '    %3d) %s\n' "$((i+1))" "${filtered[$i]}"
+    # 查询成功了也只是参考；用户可以任意手动输入 tag / 完整镜像
+    filtered=()
+    if [ -n "$keyword" ]; then
+        for tag in "${TAGS[@]}"; do
+            if printf '%s' "$tag" | grep -qiF "$keyword"; then
+                filtered+=("$tag")
+            fi
         done
-        echo ""
-        ask "请选择 tag 编号" "1"
-        n="$REPLY"
-        if [ "$n" -ge 1 ] 2>/dev/null && [ "$n" -le "${#filtered[@]}" ]; then
-            SELECTED_IMAGE="$QUAY_REPO:${filtered[$((n-1))]}"
+    fi
+    if [ ${#filtered[@]} -eq 0 ]; then
+        filtered=("${TAGS[@]}")
+    fi
+
+    display_count=${#filtered[@]}
+    [ "$display_count" -gt 20 ] && display_count=20
+
+    echo ""
+    echo -e "  ${CYAN}官方查询结果仅作参考，共 ${#filtered[@]} 个匹配 tag:${RESET}"
+    for ((i=0; i<display_count; i++)); do
+        printf '    %3d) %s
+' "$((i+1))" "${filtered[$i]}"
+    done
+    echo ""
+
+    while true; do
+        printf '  请输入要拉取的 tag 或完整镜像，或输入 1-%s 选择参考项: ' "$display_count"
+        IFS= read -r choice || choice=""
+        if [ -z "$choice" ]; then
+            echo -e "  ${RED}输入不能为空。${RESET}"
+            continue
+        fi
+        if [ "$choice" -ge 1 ] 2>/dev/null && [ "$choice" -le "$display_count" ] 2>/dev/null; then
+            SELECTED_IMAGE="$QUAY_REPO:${filtered[$((choice-1))]}"
             return 0
         fi
-        echo -e "  ${RED}输入编号无效。${RESET}"
+        # 非编号输入，一律当作手动 tag / 完整镜像
+        if printf '%s' "$choice" | grep -q '/'; then
+            SELECTED_IMAGE="$choice"
+        else
+            SELECTED_IMAGE="$QUAY_REPO:$choice"
+        fi
+        return 0
     done
 }
-
+ 
 # ---------- 颜色辅助 ----------
 DIM='\033[2m'
 
@@ -270,44 +261,112 @@ else
 fi
 
 # ==== 2. 容器配置 ====
+# 下面所有配置均支持环境变量预设；未预设时通过 A/B 选项引导，尽量不让客户手输参数。
+chosen=""
+pick_abcd() {
+    local p="$1" d="$2"
+    while true; do
+        ask "$p" "$d"
+        case "$REPLY" in
+            a|A|1) chosen="A"; return 0 ;;
+            b|B|2) chosen="B"; return 0 ;;
+            c|C|3) chosen="C"; return 0 ;;
+            d|D|4) chosen="D"; return 0 ;;
+        esac
+    done
+}
+pick_ab() {
+    local p="$1" d="$2"
+    while true; do
+        ask "$p" "$d"
+        case "$REPLY" in
+            a|A|1) chosen="A"; return 0 ;;
+            b|B|2) chosen="B"; return 0 ;;
+        esac
+    done
+}
+
 NAME_USE="${2:-${NAME:-}}"
 if [ -z "$NAME_USE" ]; then
-    ask "请输入容器名称" "asc_dev"
-    NAME_USE="$REPLY"
-    [ -z "$NAME_USE" ] && NAME_USE="asc_dev"
-fi
-
-WORK_DIR_USE="${WORK_DIR:-${ITOOL_WORK_DIR:-$HOME/ascend_ops_workspace}}"
-if [ -z "${WORK_DIR:-}" ] && [ -z "${ITOOL_WORK_DIR:-}" ]; then
-    ask "宿主机工作目录(将挂载到 /workspace)" "$WORK_DIR_USE"
-    WORK_DIR_USE="$REPLY"
-fi
-[ -z "$WORK_DIR_USE" ] && WORK_DIR_USE="$HOME/ascend_ops_workspace"
-
-SHM_SIZE_USE="${SHM_SIZE:-16g}"
-if [ -z "${SHM_SIZE:-}" ]; then
-    ask "共享内存大小" "$SHM_SIZE_USE"
-    SHM_SIZE_USE="$REPLY"
-fi
-
-NET_MODE_USE="${NET_MODE:-host}"
-if [ -z "${NET_MODE:-}" ]; then
-    while true; do
-        ask "网络模式(host/bridge)" "$NET_MODE_USE"
-        NET_MODE_USE="$REPLY"
-        [ "$NET_MODE_USE" = "host" ] || [ "$NET_MODE_USE" = "bridge" ] && break
-    done
-fi
-
-PRIV_ENV_SET=0
-[ -n "${PRIVILEGED:-}" ] && PRIV_ENV_SET=1
-PRIVILEGED_USE="${PRIVILEGED:-yes}"
-if [ "$PRIV_ENV_SET" = "0" ]; then
-    if ask_yes "是否使用 --privileged (y/n)" "$PRIVILEGED_USE"; then
-        PRIVILEGED_USE="yes"
+    echo ""
+    echo -e "  ${CYAN}容器名称${RESET}"
+    echo -e "    ${GREEN}A${RESET}) asc_dev（默认）"
+    echo -e "    ${GREEN}B${RESET}) 自定义名称"
+    pick_ab "请选择" "A"
+    if [ "$chosen" = "A" ]; then
+        NAME_USE="asc_dev"
     else
-        PRIVILEGED_USE="no"
+        ask "请输入容器名称" "asc_dev"
+        NAME_USE="$REPLY"
+        [ -z "$NAME_USE" ] && NAME_USE="asc_dev"
     fi
+fi
+
+DEFAULT_WORK_DIR="${HOME:-/root}/ascend_ops_workspace"
+CWD_WORK_DIR="${PWD:-$(pwd)}/ascend_ops_workspace"
+WORK_DIR_USE="${WORK_DIR:-${ITOOL_WORK_DIR:-}}"
+if [ -z "$WORK_DIR_USE" ]; then
+    echo ""
+    echo -e "  ${CYAN}宿主机工作目录（将挂载到容器 /workspace）${RESET}"
+    echo -e "    ${GREEN}A${RESET}) ${DEFAULT_WORK_DIR}（默认）"
+    echo -e "    ${GREEN}B${RESET}) ${CWD_WORK_DIR}"
+    echo -e "    ${GREEN}C${RESET}) 自定义路径"
+    pick_abcd "请选择" "A"
+    case "$chosen" in
+        A) WORK_DIR_USE="$DEFAULT_WORK_DIR" ;;
+        B) WORK_DIR_USE="$CWD_WORK_DIR" ;;
+        C)
+            while true; do
+                ask "请输入宿主机工作目录" "$DEFAULT_WORK_DIR"
+                WORK_DIR_USE="$REPLY"
+                [ -n "$WORK_DIR_USE" ] && break
+            done
+            ;;
+    esac
+fi
+[ -z "$WORK_DIR_USE" ] && WORK_DIR_USE="$DEFAULT_WORK_DIR"
+
+SHM_SIZE_USE="${SHM_SIZE:-}"
+if [ -z "$SHM_SIZE_USE" ]; then
+    echo ""
+    echo -e "  ${CYAN}容器共享内存 --shm-size${RESET}"
+    echo -e "    ${GREEN}A${RESET}) 16g（默认，一般算子开发够用）"
+    echo -e "    ${GREEN}B${RESET}) 32g"
+    echo -e "    ${GREEN}C${RESET}) 64g"
+    echo -e "    ${GREEN}D${RESET}) 自定义"
+    pick_abcd "请选择" "A"
+    case "$chosen" in
+        A) SHM_SIZE_USE="16g" ;;
+        B) SHM_SIZE_USE="32g" ;;
+        C) SHM_SIZE_USE="64g" ;;
+        D)
+            while true; do
+                ask "请输入共享内存大小" "16g"
+                SHM_SIZE_USE="$REPLY"
+                [ -n "$SHM_SIZE_USE" ] && break
+            done
+            ;;
+    esac
+fi
+
+NET_MODE_USE="${NET_MODE:-}"
+if [ -z "$NET_MODE_USE" ]; then
+    echo ""
+    echo -e "  ${CYAN}容器网络模式${RESET}"
+    echo -e "    ${GREEN}A${RESET}) host（默认，推荐 NPU / vLLM 场景）"
+    echo -e "    ${GREEN}B${RESET}) bridge"
+    pick_ab "请选择" "A"
+    [ "$chosen" = "A" ] && NET_MODE_USE="host" || NET_MODE_USE="bridge"
+fi
+
+PRIVILEGED_USE="${PRIVILEGED:-}"
+if [ -z "$PRIVILEGED_USE" ]; then
+    echo ""
+    echo -e "  ${CYAN}是否使用 --privileged${RESET}"
+    echo -e "    ${GREEN}A${RESET}) yes（默认，推荐）"
+    echo -e "    ${GREEN}B${RESET}) no"
+    pick_ab "请选择" "A"
+    [ "$chosen" = "A" ] && PRIVILEGED_USE="yes" || PRIVILEGED_USE="no"
 fi
 
 EXTRA_ARGS_USE="${EXTRA_ARGS:-}"

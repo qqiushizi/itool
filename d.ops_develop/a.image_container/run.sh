@@ -150,7 +150,7 @@ fetch_official_tags() {
 # ---------- 选择官方 tag ----------
 choose_official_tag() {
     local keyword="${TAG_FILTER:-${CANN_TAG_FILTER:-}}"
-    local filtered=() i n tag example="9.1.0-910b-ubuntu22.04-py3.10"
+    local filtered=() i n tag choice example="9.1.0-910b-ubuntu22.04-py3.10"
     local show_count
 
     case "$QUAY_REPO" in
@@ -194,13 +194,26 @@ choose_official_tag() {
         if [ ${#filtered[@]} -gt 20 ]; then
             echo ""
             echo -e "  ${YELLOW}匹配到 ${#filtered[@]} 个 tag，先展示前 20 个。${RESET}"
-            echo -e "  ${DIM}建议用更精确关键字筛选，例如: 9.1.0 / 910b / py3.10 / devel${RESET}"
+            echo -e "  ${DIM}可输入 1-20 直接选择；也可输入新关键字继续筛选；直接回车选择第 1 个。${RESET}"
             for ((i=0; i<20; i++)); do
                 printf '    %3d) %s\n' "$((i+1))" "${filtered[$i]}"
             done
             echo ""
-            ask "请输入更精确筛选关键字" "$keyword"
-            keyword="$REPLY"
+            ask "选择编号(1-20) 或筛选关键字" "1"
+            choice="$REPLY"
+            case "$choice" in
+                *[!0-9]*)
+                    keyword="$choice"
+                    continue
+                    ;;
+                *)
+                    if [ "$choice" -ge 1 ] 2>/dev/null && [ "$choice" -le 20 ] 2>/dev/null; then
+                        SELECTED_IMAGE="$QUAY_REPO:${filtered[$((choice-1))]}"
+                        return 0
+                    fi
+                    echo -e "  ${RED}编号无效。${RESET}"
+                    ;;
+            esac
             continue
         fi
 

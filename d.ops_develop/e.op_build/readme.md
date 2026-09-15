@@ -24,6 +24,15 @@ bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom
 bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json 910B
 ```
 
+arch 会自动转换成 msopgen 需要的格式：
+
+```text
+910B          -> ai_core-ascend910B
+Ascend910B    -> ai_core-ascend910B
+310P          -> ai_core-ascend310P
+ai_core-ascend910B -> ai_core-ascend910B（保持不变）
+```
+
 ## 输出
 
 ```text

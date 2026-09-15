@@ -52,7 +52,29 @@ mkdir -p "$OPS_WORKSPACE"
 # ---------- 解析 op.json ----------
 OP_JSON="${1:-}"
 ARCH_IN="${2:-910B}"
-ARCH=$(printf '%s' "$ARCH_IN" | tr '[:upper:]' '[:lower:]')
+
+# msopgen -c 需要的是 ai_core-ascendXXX 形式，例如 ai_core-ascend910B。
+# 允许用户输入 910B / ascend910B / ai_core-ascend910B。
+normalize_soc() {
+    local s="${1:-}"
+    case "$s" in
+        ai_core-*) s="${s#ai_core-}" ;;
+        ai_core* ) s="${s#ai_core}" ;;
+    esac
+    case "$s" in
+        [Aa]scend*) s="${s#[Aa]scend}" ;;
+    esac
+    case "$s" in
+        910B|910b) printf 'ascend910B'; return 0 ;;
+        910A|910a) printf 'ascend910A'; return 0 ;;
+        910)       printf 'ascend910';  return 0 ;;
+        310P|310p) printf 'ascend310P'; return 0 ;;
+        310)       printf 'ascend310';  return 0 ;;
+        *)         printf '%s' "$s";    return 0 ;;
+    esac
+}
+SOC_UNIT=$(normalize_soc "$ARCH_IN")
+COMPUTE_UNIT="ai_core-$SOC_UNIT"
 
 if [ -n "$OP_JSON" ]; then
     if [ -d "$OP_JSON" ]; then
@@ -119,7 +141,7 @@ echo -e "  ${WHITE} msopgen 生成算子工程${RESET}"
 echo -e "  ${WHITE}==========================================================${RESET}"
 printf '  %-16s: %s\n' "msopgen" "$MSOPGEN"
 printf '  %-16s: %s\n' "op.json" "$OP_JSON"
-printf '  %-16s: ai_core-%s\n' "arch" "$ARCH"
+printf '  %-16s: %s\n' "arch" "$COMPUTE_UNIT"
 printf '  %-16s: %s\n' "输出目录" "$OUT_DIR"
 echo ""
 
@@ -129,7 +151,7 @@ if [ -n "$(find "$OUT_DIR" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null || t
     echo -e "  ${YELLOW}msopgen 可能直接覆盖或报错；如需保留旧工程，请先重命名/清理该目录。${RESET}"
 fi
 
-"$MSOPGEN" gen -i "$OP_JSON" -f pytorch -c "ai_core-$ARCH" -out "$OUT_DIR"
+"$MSOPGEN" gen -i "$OP_JSON" -f pytorch -c "$COMPUTE_UNIT" -out "$OUT_DIR"
 
 echo ""
 echo -e "  ${GREEN}✔ 算子工程已生成:${RESET} $OUT_DIR"

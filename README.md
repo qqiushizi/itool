@@ -100,46 +100,58 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 
 ```
 d.ops_develop/
-├── a.image_container/                 ① 镜像拉取 + 容器实例化
+├── a.llm_config/                     ① 大模型配置管理
+│   ├── run.sh                 新建/修改/删除/测试配置，供 LLM 功能选择
+│   └── readme.md              功能说明
+├── b.image_container/                 ② 镜像拉取 + 容器实例化
 │   ├── run.sh                         输入镜像地址 / 检查或拉取 / 生成 start_container.sh
 │   └── readme.md                      功能说明
-├── b.env_check/                       ② 容器内环境检查（只读）
+├── c.env_check/                       ③ 容器内环境检查（只读）
 │   ├── run.sh                         芯片识别 + 版本兼容矩阵 + 建议
 │   └── readme.md                      功能说明
-├── c.install_cann/                    ③ 按需安装/补装 CANN toolkit
+├── d.install_cann/                    ④ 按需安装/补装 CANN toolkit
 │   ├── a.cann-9.1.0/run.sh            9.1.0 (推荐)
 │   ├── b.cann-9.0.0/run.sh            9.0.0
 │   ├── c.cann-8.2.RC1/run.sh          8.2.RC1 (旧芯片兼容)
 │   ├── d.cann-8.1.RC1/run.sh          8.1.RC1 (旧芯片兼容)
 │   └── readme.md                      版本说明 + 容器内安装要求
-├── d.op_design/                       ④ 算子设计需求分析
-│   ├── run.sh                  本地/外部 LLM / 手动填写 → workspace/op_design_<算子名>/
+├── e.op_design/                       ⑤ 算子设计需求分析
+│   ├── run.sh                  选择模型配置 / 手动填写 → op.json + op_spec.md
 │   └── readme.md              功能说明
-└── e.op_build/                        ⑤ 算子工程构建
-    ├── run.sh                  读取 workspace 下 op.json，用 msopgen 生成算子工程
+├── f.op_build/                        ⑥ 算子工程构建
+│   ├── run.sh                  读取 workspace 下 op.json，用 msopgen 生成 AscendC 工程
+│   └── readme.md              功能说明
+└── g.op_fix/                          ⑦ 大模型辅助修改算子工程
+    ├── run.sh                  选择工程 + 模型配置，多轮对话修改代码
     └── readme.md              功能说明
 ```
 
 ### 完整示例
 
 ```bash
-# ① 拉镜像 + 建容器
-bash d.ops_develop/a.image_container/run.sh
+# ① 首次使用先创建大模型配置
+bash d.ops_develop/a.llm_config/run.sh
+
+# ② 拉镜像 + 建容器
+bash d.ops_develop/b.image_container/run.sh
 
 # 进入容器
 docker exec -it asc_dev bash
 
-# ② 容器内环境检查（只读, 只给结论和建议）
-bash d.ops_develop/b.env_check/run.sh
+# ③ 容器内环境检查（只读, 只给结论和建议）
+bash d.ops_develop/c.env_check/run.sh
 
-# ③ 若检查报告提示“安装/更换 CANN”, 再按需执行
-bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh
+# ④ 若检查报告提示“安装/更换 CANN”, 再按需执行
+bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh
 
-# ④ 需求分析(本地/外部 LLM / 手动填写) → 生成 op.json / op_spec.md
-bash d.ops_develop/d.op_design/run.sh
+# ⑤ 需求分析：选择模型配置或手动填写 → op.json / op_spec.md
+bash d.ops_develop/e.op_design/run.sh
 
-# ⑤ 生成算子工程
-bash d.ops_develop/e.op_build/run.sh   # 默认自动读取 workspace 下的 op.json
+# ⑥ 生成算子工程
+bash d.ops_develop/f.op_build/run.sh
+
+# ⑦ 大模型辅助修改算子工程
+bash d.ops_develop/g.op_fix/run.sh
 ```
 
 ---

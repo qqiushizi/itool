@@ -92,9 +92,9 @@ curl -s -d 'MySecret123' http://<server-A>:5170/api/login
 # 菜单结构
 curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/menu?path=d.ops_develop'
 # → HAS_RUN	0
-#   FOLDER	a.image_container	a
-#   FOLDER	b.env_check	b
-#   FOLDER	c.install_cann	c
+#   FOLDER	b.image_container	a
+#   FOLDER	c.env_check	b
+#   FOLDER	d.install_cann	c
 #   ...
 
 # 打包下载 + 预览
@@ -106,28 +106,52 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 
 ## 3. 算子开发工作流（d.ops_develop）
 
-面向：在客户机器上开发算子 / 基于算子源码改造。工作流先拉镜像、建容器，后续检查与开发均在容器内完成。每步都是独立 `run.sh`。
+面向：在客户机器上开发算子 / 基于算子源码改造。完整链路共 7 步，每步都是独立 `run.sh`。
 
 ```
-① a.image_container  拉镜像 + 建容器
-② b.env_check        容器内环境检查（只读，只给建议）
-③ c.install_cann     按需安装/补装 CANN toolkit（检查通过可跳过）
-④ d.op_design        需求分析 → op.json + op_spec.md
-⑤ e.op_build        用 msopgen 生成算子工程
+① a.llm_config      创建/选择大模型配置
+② b.image_container 拉镜像 + 建容器
+③ c.env_check       容器内环境检查（只读，只给建议）
+④ d.install_cann    按需安装/补装 CANN toolkit（检查通过可跳过）
+⑤ e.op_design       选择模型配置/手动填写 → op.json + op_spec.md
+⑥ f.op_build        用 msopgen 生成 AscendC 算子工程
+⑦ g.op_fix          大模型辅助修改算子工程代码
 ```
 
-### 3.1 ① 镜像拉取 + 容器实例化
+### 3.1 ① 大模型配置管理
 
 ```bash
-bash d.ops_develop/a.image_container/run.sh
+bash d.ops_develop/a.llm_config/run.sh
+```
+
+用于：
+
+- 新建配置
+- 修改配置
+- 删除配置
+- 测试配置
+- 设置当前使用的配置
+
+配置保存在：
+
+```text
+d.ops_develop/workspace/llm_configs/<配置名>.json
+```
+
+后续 `e.op_design` 和 `g.op_fix` 只选择配置，不再要求用户重新输入 API Base / Key / Model。
+
+### 3.2 ② 镜像拉取 + 容器实例化
+
+```bash
+bash d.ops_develop/b.image_container/run.sh
 ```
 
 脚本会询问镜像地址和容器名称（默认 `asc_dev`）。也支持非交互：
 
 ```bash
-IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
+IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/b.image_container/run.sh
 
-bash d.ops_develop/a.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 asc_dev
+bash d.ops_develop/b.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 asc_dev
 ```
 
 自动流程：
@@ -154,11 +178,12 @@ bash d.ops_develop/a.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubunt
 可通过 `WORK_DIR` 覆盖：
 
 ```bash
-WORK_DIR=/data/ops bash d.ops_develop/a.image_container/run.sh
+WORK_DIR=/data/ops bash d.ops_develop/b.image_container/run.sh
 ```
 
-生成的 `start_container.sh` 是**当前机器专用**模板；同一台机器反复重启容器可直接使用，换机器应重新运行 `a.image_container`。
-### 3.2 ② 容器内环境检查（只读，只给建议）
+生成的 `start_container.sh` 是**当前机器专用**模板；同一台机器可反复使用，换机器应重新运行。
+
+### 3.3 ③ 容器内环境检查（只读，只给建议）
 
 启动容器后进入容器：
 
@@ -169,46 +194,30 @@ docker exec -it asc_dev bash
 然后在容器内运行：
 
 ```bash
-bash d.ops_develop/b.env_check/run.sh
+bash d.ops_develop/c.env_check/run.sh
 ```
 
 脚本在**当前容器环境**检查：
 
-- 芯片型号：优先 `npu-smi info`，识别 910B / 910A / 910C / 950 / 310P 等。
-- 软件版本：`Python` ↔ `torch` ↔ `torch_npu` ↔ `CANN` ↔ 芯片型号。
-- CANN 安装目录和 `set_env.sh` 激活脚本。
-
-输出示例：
-
-```
-运行位置    : 容器内
-芯片型号    : 910B
-Python      : 3.10.13
-CANN        : 9.0.0
-安装目录    : /workspace/Ascend/ascend-toolkit-9.0.0
-激活脚本    : /workspace/Ascend/ascend-toolkit-9.0.0/set_env.sh
-torch       : 2.6.0
-torch_npu   : 2.6.0.post2
-
-✅ 综合结论: 当前环境软件版本匹配, 可以继续算子开发。
-```
+- 芯片型号：优先 `npu-smi info`
+- 软件版本：`Python` ↔ `torch` ↔ `torch_npu` ↔ `CANN` ↔ 芯片型号
+- CANN 安装目录和 `set_env.sh` 激活脚本
 
 该脚本只提示，不执行：
 
-- 缺 CANN / 版本不符：提示进入 `c.install_cann` 选版本补装。
-- 缺 torch / torch_npu：提示参考 `e.environment/e.setenvs/setenvs.sh` 的 `install_torch`。
-- 检查通过：提示进入 `d.op_design`。
+- 缺 CANN / 版本不符：提示进入 `d.install_cann` 选版本补装
+- 检查通过：提示进入 `e.op_design`
 
-### 3.3 ③ 按需安装/补装 CANN toolkit（容器内）
+### 3.4 ④ 按需安装/补装 CANN toolkit（容器内）
 
-> 仅当 3.2 的报告建议“安装/更换 CANN”时再执行；环境检查通过可跳过。
+> 仅当环境检查报告建议“安装/更换 CANN”时再执行；检查通过可跳过。
 
 ```bash
 # 推荐 9.1.0
-bash d.ops_develop/c.install_cann/a.cann-9.1.0/run.sh
+bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh
 
 # 9.0.0
-bash d.ops_develop/c.install_cann/b.cann-9.0.0/run.sh
+bash d.ops_develop/d.install_cann/b.cann-9.0.0/run.sh
 ```
 
 版本目录：
@@ -226,31 +235,16 @@ bash d.ops_develop/c.install_cann/b.cann-9.0.0/run.sh
 /workspace/Ascend/ascend-toolkit-<version>
 ```
 
-`/workspace` 由 `a.image_container` 挂载宿主机工作目录，所以容器删除/重建后安装结果仍然保留。
-
-脚本自动识别 `x86_64` / `aarch64`，然后：查包/下载 toolkit → 安装 → `source set_env.sh` → `import acl` 验证。未进入容器直接运行会退出；宿主机只探测 URL 可加 `ITOOL_ALLOW_HOST=1 CHECK_ONLY=1`。
-
-### 3.4 ④ 算子需求分析 → 生成 op.json
+### 3.5 ⑤ 算子需求分析 → 生成 op.json
 
 ```bash
-bash d.ops_develop/d.op_design/run.sh
+bash d.ops_develop/e.op_design/run.sh
 ```
 
 运行后可选：
 
-- `[1] 本地大模型`：引导声明 `ITOOL_LLM_API_BASE` / `ITOOL_LLM_MODEL` / `ITOOL_LLM_API_KEY`
-- `[2] 外部 API`：引导声明外部 OpenAI Chat Completions 兼容接口参数
-- `[3] 手动填写`
-
-也支持通过环境变量直接进入：
-
-```bash
-# 昇腾宿主机上已启动的 vLLM-ascend 服务
-OP_SPEC_MODE=llm LLM_PROVIDER=local OP_DESC_LLM='实现矩阵乘法 MatMulCustom' ITOOL_LLM_API_BASE=http://127.0.0.1:8000/v1 ITOOL_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct bash d.ops_develop/d.op_design/run.sh
-
-# 外部 API
-OP_SPEC_MODE=llm LLM_PROVIDER=external OP_DESC_LLM='实现矩阵乘法 MatMulCustom' ITOOL_LLM_API_BASE=https://api.deepseek.com/v1 ITOOL_LLM_API_KEY=sk-xxxx ITOOL_LLM_MODEL=deepseek-chat bash d.ops_develop/d.op_design/run.sh
-```
+- `[1] / [2]` 大模型分析：从 `a.llm_config` 创建的配置中选择
+- `[3]` 手动填写
 
 生成（默认在 `d.ops_develop/workspace/` 下归档）：
 
@@ -260,14 +254,20 @@ d.ops_develop/workspace/op_design_<算子名>/
 └── op_spec.md
 ```
 
-### 3.5 ⑤ 生成算子工程
+### 3.6 ⑥ 生成算子工程
 
 ```bash
 # 自动在 d.ops_develop/workspace/ 下查找 op.json
-bash d.ops_develop/e.op_build/run.sh
+bash d.ops_develop/f.op_build/run.sh
 
 # 或明确指定 op.json
-bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_MatMulCustom/op.json
+bash d.ops_develop/f.op_build/run.sh d.ops_develop/workspace/op_design_MatMulCustom/op.json
+```
+
+工程固定用 AscendC/C++ 模板生成，命令等价于：
+
+```bash
+msopgen gen -i <op.json> -f tf -lan cpp -c <compute_unit> -out <输出目录>
 ```
 
 输出工程默认在：
@@ -276,14 +276,25 @@ bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_MatMulCus
 d.ops_develop/workspace/op_build_<算子名>/
 ```
 
-编译示例：
+### 3.7 ⑦ 大模型辅助修改算子工程
 
 ```bash
-cd torchbind_MatMulCustom
-source /workspace/Ascend/ascend-toolkit-9.1.0/set_env.sh
-python setup.py install          # CPU
-python setup_npu.py install      # NPU
+bash d.ops_develop/g.op_fix/run.sh
 ```
+
+脚本会：
+
+1. 列出 `workspace/` 下的算子工程
+2. 从 `a.llm_config` 的配置中选择一个
+3. 进入多轮对话修改模式
+4. 保持上下文记忆
+
+上下文按工程保存：
+
+```text
+workspace/op_build_<算子名>/.itool/op_fix_history.jsonl
+```
+
 ## 4. 常见问题
 
 | 现象 | 处理 |

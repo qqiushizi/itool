@@ -1,4 +1,4 @@
-# a.image_container — 镜像拉取 + 容器实例化
+# b.image_container — 镜像拉取 + 容器实例化
 
 > 算子开发工作流第 1 步：从 quay.io 官方仓库查询 tag，客户可视化选择镜像；
 > 本机已有则复用，没有则 `docker pull`；生成当前机器专用的 `start_container.sh`，确认后再启动。
@@ -15,13 +15,13 @@
 也可以通过环境变量直接指定：
 
 ```bash
-QUAY_REPO=quay.io/ascend/vllm-ascend bash d.ops_develop/a.image_container/run.sh
+QUAY_REPO=quay.io/ascend/vllm-ascend bash d.ops_develop/b.image_container/run.sh
 ```
 
 ## 运行
 
 ```bash
-bash d.ops_develop/a.image_container/run.sh
+bash d.ops_develop/b.image_container/run.sh
 ```
 
 交互流程：
@@ -38,13 +38,13 @@ bash d.ops_develop/a.image_container/run.sh
 指定完整镜像：
 
 ```bash
-IMAGE=quay.io/ascend/vllm-ascend:v0.27.1-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
+IMAGE=quay.io/ascend/vllm-ascend:v0.27.1-910b-ubuntu22.04-py3.10 bash d.ops_develop/b.image_container/run.sh
 ```
 
 指定仓库和 tag：
 
 ```bash
-QUAY_REPO=quay.io/ascend/vllm-ascend IMAGE=v0.27.1-910b-ubuntu22.04-py3.10 bash d.ops_develop/a.image_container/run.sh
+QUAY_REPO=quay.io/ascend/vllm-ascend IMAGE=v0.27.1-910b-ubuntu22.04-py3.10 bash d.ops_develop/b.image_container/run.sh
 ```
 
 只给 tag 时，默认通过 `QUAY_REPO` 补全仓库前缀；没有 `QUAY_REPO` 时会交互选择仓库。
@@ -86,7 +86,7 @@ $WORK_DIR/start_container.sh
 脚本是**当前机器专用**模板，同一台机器可反复使用。换机器后应重新运行：
 
 ```bash
-bash d.ops_develop/a.image_container/run.sh
+bash d.ops_develop/b.image_container/run.sh
 ```
 
 ## 常用环境变量
@@ -110,5 +110,5 @@ EXTRA_ARGS=                           # 额外 docker run 参数
 ```bash
 docker exec -it asc_dev bash
 cd /workspace/itool
-bash d.ops_develop/b.env_check/run.sh
+bash d.ops_develop/c.env_check/run.sh
 ```

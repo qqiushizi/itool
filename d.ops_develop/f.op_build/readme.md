@@ -1,4 +1,4 @@
-# e.op_build — 算子工程构建
+# f.op_build — 算子工程构建
 
 > 工作流第 5 步：用 CANN `msopgen` 结合 `op.json` 建立算子工程。
 > 输入、输出统一放在 `d.ops_develop/workspace/` 下。
@@ -7,7 +7,7 @@
 
 ```bash
 # 自动在 d.ops_develop/workspace/ 下查找 op.json
-bash d.ops_develop/e.op_build/run.sh
+bash d.ops_develop/f.op_build/run.sh
 ```
 
 如果有多个 `op.json`，脚本会列出让你选择。
@@ -15,13 +15,13 @@ bash d.ops_develop/e.op_build/run.sh
 也可以直接指定：
 
 ```bash
-bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json
+bash d.ops_develop/f.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json
 ```
 
 指定 chip arch：
 
 ```bash
-bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json 910B
+bash d.ops_develop/f.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json 910B
 ```
 
 工程生成方式固定为 AscendC/C++：
@@ -59,4 +59,4 @@ REPO_ROOT=/path/to/itool            # 默认自动识别 itool 仓库根目录
 
 - 已安装并激活 CANN toolkit（`source set_env.sh`）
 - 能找到 `msopgen`
-- 已由 `d.op_design` 生成 `op.json`
+- 已由 `e.op_design` 生成 `op.json`

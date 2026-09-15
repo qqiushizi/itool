@@ -8,9 +8,9 @@
 #   3) 输出到 d.ops_develop/workspace/op_build_<算子名>
 #
 # 用法:
-#   bash d.ops_develop/e.op_build/run.sh
-#   bash d.ops_develop/e.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json
-#   bash d.ops_develop/e.op_build/run.sh <op.json> 910B
+#   bash d.ops_develop/f.op_build/run.sh
+#   bash d.ops_develop/f.op_build/run.sh d.ops_develop/workspace/op_design_AddCustom/op.json
+#   bash d.ops_develop/f.op_build/run.sh <op.json> 910B
 #
 # 常用环境变量:
 #   OPS_WORKSPACE  统一工作目录，默认 d.ops_develop/workspace
@@ -90,7 +90,7 @@ else
     if [ ${#JSON_FILES[@]} -eq 0 ]; then
         echo -e "${RED}在 $OPS_WORKSPACE 下没有找到 op.json。${RESET}" >&2
         echo "请先运行算子需求分析：" >&2
-        echo "  bash d.ops_develop/d.op_design/run.sh" >&2
+        echo "  bash d.ops_develop/e.op_design/run.sh" >&2
         exit 1
     fi
     if [ ${#JSON_FILES[@]} -eq 1 ]; then

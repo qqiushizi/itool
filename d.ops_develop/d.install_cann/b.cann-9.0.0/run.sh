@@ -85,7 +85,7 @@ CANN_BASE_URL="${CANN_BASE_URL:-https://ascend-repo.obs.cn-east-2.myhuaweicloud.
 
 if ! inside_container && [ "${ITOOL_ALLOW_HOST:-0}" != "1" ]; then
     echo -e "  ${RED}✖ 本步骤默认必须在算子开发容器内执行。${RESET}" >&2
-    echo "  → 请先运行: bash d.ops_develop/a.image_container/run.sh"
+    echo "  → 请先运行: bash d.ops_develop/b.image_container/run.sh"
     echo "  → 然后进入容器: docker exec -it <容器名> bash"
     echo "  → 再执行本脚本。"
     echo "  如仅在宿主机探测网络/URL, 请使用: ITOOL_ALLOW_HOST=1 CHECK_ONLY=1 bash $0"
@@ -175,7 +175,7 @@ else
     rc=$?
     if [ $rc -ne 0 ] || [ ! -s "$PKG_PATH" ]; then
         echo -e "${RED}下载失败(退出码 $rc)。${RESET}" >&2
-        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/c.install_cann/b.cann-9.0.0/run.sh" >&2
+        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/d.install_cann/b.cann-9.0.0/run.sh" >&2
         exit 1
     fi
 fi
@@ -294,4 +294,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 算子需求分析 → bash d.ops_develop/d.op_design/run.sh"
+echo "下一步: 算子需求分析 → bash d.ops_develop/e.op_design/run.sh"

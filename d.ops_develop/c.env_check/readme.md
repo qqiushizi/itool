@@ -1,4 +1,4 @@
-# b.env_check — 算子开发环境检查
+# c.env_check — 算子开发环境检查
 
 > 算子在开发容器内执行；单脚本、只读，只给结论和建议，不安装/修复。
 
@@ -7,7 +7,7 @@
 直接运行：
 
 ```bash
-bash d.ops_develop/b.env_check/run.sh
+bash d.ops_develop/c.env_check/run.sh
 ```
 
 脚本会在**当前环境**完成两件核心事：
@@ -41,6 +41,6 @@ bash d.ops_develop/b.env_check/run.sh
 
 ## 使用场景
 
-- 运行 `a.image_container` 并进入容器后，作为工作流第 2 步执行
+- 运行 `b.image_container` 并进入容器后，作为工作流第 2 步执行
 - 客户现场交付时快速生成容器内环境检查报告
 - 仅在宿主机上排查时也可直接运行，但工作流推荐容器内执行

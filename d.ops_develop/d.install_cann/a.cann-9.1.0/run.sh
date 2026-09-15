@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# ③ CANN toolkit 8.2.RC1 安装 (下载 + 安装合并, 仅安装 toolkit)
+# ③ CANN toolkit 9.1.0 安装 (下载 + 安装合并, 仅安装 toolkit)
 #
 # 功能:
 #   默认在算子开发容器内执行；安装目录默认放到挂载目录 /workspace 下，
@@ -80,12 +80,12 @@ INSTALL_DIR="${INSTALL_DIR:-}"
 PKG_DIR="${PKG_DIR:-}"
 QUIET="${QUIET:-0}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
-CANN_VERSION="${CANN_VERSION:-8.2.RC1}"
+CANN_VERSION="${CANN_VERSION:-9.1.0}"
 CANN_BASE_URL="${CANN_BASE_URL:-https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%20__VER__}"
 
 if ! inside_container && [ "${ITOOL_ALLOW_HOST:-0}" != "1" ]; then
     echo -e "  ${RED}✖ 本步骤默认必须在算子开发容器内执行。${RESET}" >&2
-    echo "  → 请先运行: bash d.ops_develop/a.image_container/run.sh"
+    echo "  → 请先运行: bash d.ops_develop/b.image_container/run.sh"
     echo "  → 然后进入容器: docker exec -it <容器名> bash"
     echo "  → 再执行本脚本。"
     echo "  如仅在宿主机探测网络/URL, 请使用: ITOOL_ALLOW_HOST=1 CHECK_ONLY=1 bash $0"
@@ -94,7 +94,7 @@ fi
 
 echo ""
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "  ${WHITE}  ③ CANN toolkit 安装 · 8.2.RC1 (仅 toolkit)${RESET}"
+echo -e "  ${WHITE}  ③ CANN toolkit 安装 · 9.1.0 (仅 toolkit)${RESET}"
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
 
 # ---------- 2. 组装包名 / URL ----------
@@ -175,7 +175,7 @@ else
     rc=$?
     if [ $rc -ne 0 ] || [ ! -s "$PKG_PATH" ]; then
         echo -e "${RED}下载失败(退出码 $rc)。${RESET}" >&2
-        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/c.install_cann/c.cann-8.2.RC1/run.sh" >&2
+        echo "可先探测: CHECK_ONLY=1 bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh" >&2
         exit 1
     fi
 fi
@@ -294,4 +294,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 算子需求分析 → bash d.ops_develop/d.op_design/run.sh"
+echo "下一步: 算子需求分析 → bash d.ops_develop/e.op_design/run.sh"

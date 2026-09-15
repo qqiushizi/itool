@@ -127,7 +127,7 @@ fi
 [ -z "$REPO_ROOT" ] && REPO_ROOT="$SCRIPT_DIR"
 
 HAVE_FULL_REPO=1
-[ -f "$REPO_ROOT/d.ops_develop/b.env_check/run.sh" ] || HAVE_FULL_REPO=0
+[ -f "$REPO_ROOT/d.ops_develop/c.env_check/run.sh" ] || HAVE_FULL_REPO=0
 
 # ---------- tag 查询 ----------
 TAGS=()
@@ -471,7 +471,7 @@ SCRIPT_TAIL
 
 if [ "$HAVE_FULL_REPO" = "1" ]; then
     cat >> "$START_SH" <<'SCRIPT_TAIL_REPO'
-echo "容器内检查环境:           cd /workspace/itool && bash d.ops_develop/b.env_check/run.sh"
+echo "容器内检查环境:           cd /workspace/itool && bash d.ops_develop/c.env_check/run.sh"
 SCRIPT_TAIL_REPO
 fi
 
@@ -497,7 +497,7 @@ echo ""
 echo -e "  ${CYAN}下一步:${RESET}"
 echo -e "    1) 进入容器:      docker exec -it $NAME_USE bash"
 if [ "$HAVE_FULL_REPO" = "1" ]; then
-    echo -e "    2) 环境检查:      cd /workspace/itool && bash d.ops_develop/b.env_check/run.sh"
+    echo -e "    2) 环境检查:      cd /workspace/itool && bash d.ops_develop/c.env_check/run.sh"
 else
     echo -e "    2) 请先把 itool 仓库拷贝/挂载进容器 /workspace/itool 后再执行环境检查"
 fi

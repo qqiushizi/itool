@@ -27,23 +27,8 @@ CYAN='\033[0;36m'; WHITE='\033[1;37m'; RESET='\033[0m'
 
 # ---------- 统一工作区：d.ops_develop/workspace ----------
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "$PWD")
-REPO_ROOT="${ITOOL_REPO_ROOT:-}"
-if [ -z "$REPO_ROOT" ] && [ -f "$PWD/itool.sh" ]; then
-    REPO_ROOT="$PWD"
-fi
-if [ -z "$REPO_ROOT" ] && command -v git >/dev/null 2>&1; then
-    REPO_ROOT=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)
-fi
-if [ -z "$REPO_ROOT" ]; then
-    d="$SCRIPT_DIR"
-    while [ "$d" != "/" ]; do
-        if [ -f "$d/itool.sh" ]; then REPO_ROOT="$d"; break; fi
-        d=$(dirname "$d")
-    done
-fi
-[ -z "$REPO_ROOT" ] && REPO_ROOT="$SCRIPT_DIR"
-OPS_WORKSPACE="${OPS_WORKSPACE:-$REPO_ROOT/d.ops_develop/workspace}"
-mkdir -p "$OPS_WORKSPACE"
+source "$SCRIPT_DIR/../llm_profile.sh"
+resolve_ops_root "$SCRIPT_DIR"
 
 read_def() {  # $1=提示 $2=默认值 ; 结果放 $REPLY
     local prompt="$1" def="$2"
@@ -199,7 +184,7 @@ PY
     echo -e "    $OUT_DIR/op_spec.md"
     echo ""
     echo "下一步生成工程:"
-    echo "  bash d.ops_develop/e.op_build/run.sh $OUT_DIR/op.json"
+    echo "  bash d.ops_develop/f.op_build/run.sh $OUT_DIR/op.json"
 }
 
 # ---------- 主流程 ----------
@@ -246,44 +231,15 @@ fi
 # ============================================================
 # 大模型分析模式: 先按接入方式声明变量, 再收集算子需求
 # ============================================================
-API_BASE="${ITOOL_LLM_API_BASE:-}"
-API_KEY="${ITOOL_LLM_API_KEY:-}"
-MODEL="${ITOOL_LLM_MODEL:-}"
-TIMEOUT="${ITOOL_LLM_TIMEOUT:-120}"
-
 echo ""
-if [ "$PROVIDER" = "external" ]; then
-    echo -e "  ${CYAN}===== 外部 API 变量声明 =====${RESET}"
-    if [ -z "$API_BASE" ]; then
-        read_def "ITOOL_LLM_API_BASE" "https://api.deepseek.com/v1"
-        API_BASE="$REPLY"
-    fi
-    API_BASE="${API_BASE%/}"
-    if [ -z "$MODEL" ]; then
-        read_def "ITOOL_LLM_MODEL" "deepseek-chat"
-        MODEL="$REPLY"
-    fi
-    if [ -z "$API_KEY" ]; then
-        read_secret "ITOOL_LLM_API_KEY" ""
-        API_KEY="$REPLY"
-    fi
-else
-    echo -e "  ${CYAN}===== 本地大模型变量声明 =====${RESET}"
-    echo -e "  ${YELLOW}目标: 昇腾宿主机/容器内已启动的 vLLM-ascend 服务${RESET}"
-    if [ -z "$API_BASE" ]; then
-        read_def "ITOOL_LLM_API_BASE" "http://127.0.0.1:8000/v1"
-        API_BASE="$REPLY"
-    fi
-    API_BASE="${API_BASE%/}"
-    if [ -z "$MODEL" ]; then
-        read_def "ITOOL_LLM_MODEL(vLLM served model name)" "Qwen/Qwen2.5-7B-Instruct"
-        MODEL="$REPLY"
-    fi
-    if [ -z "$API_KEY" ]; then
-        read_secret "ITOOL_LLM_API_KEY(本地服务可留空)" ""
-        API_KEY="$REPLY"
-    fi
+echo -e "  ${CYAN}===== 选择大模型配置 =====${RESET}"
+if ! choose_llm_profile; then
+    echo -e "  ${RED}没有可用的大模型配置。${RESET}" >&2
+    echo "  请先运行: bash d.ops_develop/a.llm_config/run.sh" >&2
+    exit 1
 fi
+load_llm_profile "$SELECTED_PROFILE"
+API_BASE="${API_BASE%/}"
 
 [ -n "$API_BASE" ] || { echo -e "${RED}API Base 不能为空。${RESET}" >&2; exit 1; }
 [ -n "$MODEL" ] || { echo -e "${RED}模型名不能为空。${RESET}" >&2; exit 1; }
@@ -537,4 +493,4 @@ echo -e "    $OUT_DIR/op.json"
 echo -e "    $OUT_DIR/op_spec.md"
 echo ""
 echo "下一步生成工程:"
-echo "  bash d.ops_develop/e.op_build/run.sh $OUT_DIR/op.json"
+echo "  bash d.ops_develop/f.op_build/run.sh $OUT_DIR/op.json"

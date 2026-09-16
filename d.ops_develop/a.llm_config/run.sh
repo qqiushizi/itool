@@ -55,16 +55,22 @@ save_profile_json() {
     PROVIDER="$provider" API_BASE="$api_base" API_KEY="$api_key" MODEL="$model" TIMEOUT="$timeout" \
     FILE="$file" python3 - <<'PY'
 import os, json
+
+def clean_text(v):
+    # Bash -> Python 环境变量可能携带 surrogateescape 产生的非法字符，
+    # 直接 json.dump(ensure_ascii=False) 会报 UnicodeEncodeError。
+    return v.encode('utf-8', 'replace').decode('utf-8')
+
 obj = {
-  'provider': os.environ['PROVIDER'],
-  'api_base': os.environ['API_BASE'],
-  'api_key': os.environ['API_KEY'],
-  'model': os.environ['MODEL'],
+  'provider': clean_text(os.environ['PROVIDER']),
+  'api_base': clean_text(os.environ['API_BASE']),
+  'api_key': clean_text(os.environ['API_KEY']),
+  'model': clean_text(os.environ['MODEL']),
   'timeout': int(os.environ['TIMEOUT'] or '120'),
 }
-with open(os.environ['FILE'], 'w', encoding='utf-8') as f:
+with open(clean_text(os.environ['FILE']), 'w', encoding='utf-8') as f:
     json.dump(obj, f, ensure_ascii=False, indent=2)
-print('已保存: %s' % os.environ['FILE'])
+print('已保存: %s' % clean_text(os.environ['FILE']))
 PY
 }
 

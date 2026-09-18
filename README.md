@@ -121,9 +121,13 @@ d.ops_develop/
 ├── f.op_build/                        ⑥ 算子工程构建
 │   ├── run.sh                  读取 workspace 下 op.json，用 msopgen 生成 AscendC 工程
 │   └── readme.md              功能说明
-└── g.op_fix/                          ⑦ 大模型辅助修改算子工程
-    ├── run.sh                  选择工程 + 模型配置，多轮对话修改代码
-    └── readme.md              功能说明
+├── g.op_fix/                          ⑦ 大模型辅助修改算子工程
+│   ├── run.sh                  选择工程 + 模型配置，多轮对话修改代码
+│   └── readme.md              功能说明
+└── h.op_agent/                        ⑧ OpenCode/CANNBot Agent 安装
+    ├── readme.md              说明
+    ├── a.install_opencode/    安装 opencode 绿色版
+    └── b.install_cannbot_skill/ 接入 CANNBot skills/agents
 ```
 
 ### 完整示例
@@ -152,6 +156,10 @@ bash d.ops_develop/f.op_build/run.sh
 
 # ⑦ 大模型辅助修改算子工程
 bash d.ops_develop/g.op_fix/run.sh
+
+# ⑧ 安装 OpenCode + CANNBot skills（深度算子开发 agent）
+bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
+bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
 ```
 
 ---

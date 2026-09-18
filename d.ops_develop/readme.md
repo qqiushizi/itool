@@ -29,9 +29,13 @@ d.ops_develop/
 ├── f.op_build/                        ⑥ 算子工程构建
 │   ├── run.sh                 读取 workspace 下 op.json，用 msopgen 生成 AscendC 算子工程
 │   └── readme.md              功能说明
-└── g.op_fix/                          ⑦ 大模型辅助修改算子工程代码
-    ├── run.sh                 选择工程 + 模型配置，多轮对话修改代码
-    └── readme.md              功能说明
+├── g.op_fix/                          ⑦ 大模型辅助修改算子工程代码
+│   ├── run.sh                 选择工程 + 模型配置，多轮对话修改代码
+│   └── readme.md              功能说明
+└── h.op_agent/                        ⑧ OpenCode/CANNBot Agent 安装
+    ├── readme.md              说明
+    ├── a.install_opencode/    安装 opencode 绿色版
+    └── b.install_cannbot_skill/ 接入 CANNBot skills/agents
 ```
 
 ## 快速开始
@@ -61,6 +65,10 @@ bash d.ops_develop/f.op_build/run.sh
 
 # ⑦ 大模型辅助修改算子工程
 bash d.ops_develop/g.op_fix/run.sh
+
+# ⑧ 安装 OpenCode + CANNBot skills（深度算子开发 agent）
+bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
+bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
 ```
 
 ## 说明
@@ -73,3 +81,4 @@ bash d.ops_develop/g.op_fix/run.sh
 - `d.install_cann` 默认只能在容器内执行，只安装 toolkit，不安装 kernels/ops、合一包和驱动。
 - `f.op_build` 固定用 AscendC/C++ 模板生成算子工程。
 - `g.op_fix` 按算子工程保存上下文：`workspace/op_build_<算子名>/.itool/op_fix_history.jsonl`。
+- `h.op_agent` 使用 repo 内自带 opencode 绿色包；`b.install_cannbot_skill` 将 CANNBot 74 个 skills、18 个 agents 接入用户配置目录。

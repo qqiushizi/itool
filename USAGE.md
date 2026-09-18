@@ -106,7 +106,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 
 ## 3. 算子开发工作流（d.ops_develop）
 
-面向：在客户机器上开发算子 / 基于算子源码改造。完整链路共 7 步，每步都是独立 `run.sh`。
+面向：在客户机器上开发算子 / 基于算子源码改造。完整链路共 8 步，第 8 步为可选安装 OpenCode/CANNBot agent。
 
 ```
 ① a.llm_config      创建/选择大模型配置
@@ -116,6 +116,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 ⑤ e.op_design       选择模型配置/手动填写 → op.json + op_spec.md
 ⑥ f.op_build        用 msopgen 生成 AscendC 算子工程
 ⑦ g.op_fix          大模型辅助修改算子工程代码
+⑧ h.op_agent        安装 OpenCode + CANNBot skills/agents
 ```
 
 ### 3.1 ① 大模型配置管理
@@ -294,6 +295,26 @@ bash d.ops_develop/g.op_fix/run.sh
 ```text
 workspace/op_build_<算子名>/.itool/op_fix_history.jsonl
 ```
+
+### 3.8 ⑧ 安装 OpenCode + CANNBot skills/agents
+
+```bash
+# 解压并启动 opencode（便携模式）
+bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
+
+# 安装 opencode + CANNBot skills/agents 到用户配置目录
+bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
+```
+
+绿色包内置：
+
+```text
+skills : 74 个
+agents : 18 个
+版本   : CANNBot 1.1.0
+```
+
+非 root 用户默认安装到 `$HOME/.local/bin/opencode`，配置目录为 `${XDG_CONFIG_HOME:-$HOME/.config}/opencode`。
 
 ## 4. 常见问题
 

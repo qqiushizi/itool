@@ -1,23 +1,25 @@
 #!/bin/bash
 # ============================================================
-# ① 镜像拉取 + 容器实例化 (quay.io/ascend/cann 向导版)
+# ① 镜像拉取 + 容器实例化 (quay.io/ascend/vllm-ascend 官方向导版)
 #
 # 功能:
-#   1) 查询 quay.io/ascend/cann 官方可用 tag，客户可视化选择
-#   2) 本机已有该镜像则直接使用；不存在则自动 docker pull
-#   3) 配置容器名 / 工作目录 / 网络模式 / 是否 privileged / 共享内存
-#   4) 自动识别当前机器 NPU 设备和 Ascend 挂载
-#   5) 自动把当前 itool 仓库挂载到容器 /workspace/itool
-#   6) 生成当前机器专用 start_container.sh，预览后询问是否立即启动
+#   1) 查询 quay.io/ascend/vllm-ascend 官方可用 tag，客户可视化搜索选择
+#   2) 打印所选镜像的 docker pull 命令，可立即执行或更换 tag
+#   3) 本机已有该镜像则直接使用；不存在则自动 docker pull
+#   4) 配置容器名 / 工作目录 / 网络模式 / 是否 privileged / 共享内存
+#   5) 自动识别当前机器 NPU 设备和 Ascend 挂载
+#   6) 自动把当前 itool 仓库挂载到容器 /workspace/itool
+#   7) 生成当前机器专用 start_container.sh，预览后询问是否立即启动
 #
 # 用法:
 #   bash run.sh
-#   IMAGE=quay.io/ascend/cann:9.1.0-910b-ubuntu22.04-py3.10 bash run.sh
-#   bash run.sh quay.io/ascend/cann:9.1.0-910b-ubuntu22.04-py3.10 asc_dev
+#   IMAGE=quay.io/ascend/vllm-ascend:v0.27.1 bash run.sh
+#   bash run.sh quay.io/ascend/vllm-ascend:v0.27.1 asc_dev
 #
 # 常用环境变量:
-#   CANN_TAG_FILTER  官方 tag 筛选关键字，例如 9.1.0 / 910b / py3.10
-#   IMAGE            显式指定镜像；如果只有 tag，会自动补 quay.io/ascend/cann 前缀
+#   QUAY_REPO        官方仓库，默认 quay.io/ascend/vllm-ascend
+#   TAG_SEARCH       查询时预填搜索关键字（兼容旧名 TAG_FILTER）
+#   IMAGE            显式指定镜像；如果只有 tag，会自动补 QUAY_REPO 前缀
 #   NAME             容器名
 #   WORK_DIR         宿主机工作目录，默认 ~/ascend_ops_workspace
 #   SHM_SIZE         共享内存，默认 16g
@@ -30,14 +32,16 @@ set -uo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; WHITE='\033[1;37m'; RESET='\033[0m'
 
-QUAY_REPO="${QUAY_REPO:-}"
+QUAY_REPO="${QUAY_REPO:-quay.io/ascend/vllm-ascend}"
 QUAY_TAGS_URL=""
 TAG_LIMIT=100
 QUAY_CONNECT_TIMEOUT=5
 QUAY_MAX_TIME=8
-QUERY_PAGES=5
+QUAY_MAX_PAGES=500   # 分页安全上限，防止异常情况下无限循环
 # quay.io 直连不通时按顺序尝试国内镜像；留空则禁止镜像 fallback
 QUAY_MIRROR="${QUAY_MIRROR:-m.daocloud.io/quay.io quay.nju.edu.cn}"
+# tag 查询搜索关键字可被环境变量预设；兼容旧名 TAG_FILTER
+TAG_SEARCH="${TAG_SEARCH:-${TAG_FILTER:-}}"
 
 have() { command -v "$1" >/dev/null 2>&1; }
 warn()  { echo -e "  ${YELLOW}[ 警告 ]${RESET} $1"; }
@@ -91,20 +95,29 @@ set_quay_url() {
     path=$(quay_repo_path "$QUAY_REPO")
     QUAY_TAGS_URL="https://quay.io/api/v1/repository/$path/tag"
 }
-choose_official_repo() {
+# ---------- A/B/C/D 与 A/B 选项选择器（供镜像选择与容器配置复用） ----------
+chosen=""
+pick_abcd() {
+    local p="$1" d="$2"
     while true; do
-        echo ""
-        echo -e "  ${CYAN}请选择要查询/拉取的官方 quay.io 仓库:${RESET}"
-        echo -e "    ${GREEN}A${RESET}) quay.io/ascend/vllm-ascend   (vLLM Ascend 推理容器)"
-        echo -e "    ${GREEN}B${RESET}) quay.io/ascend/cann          (CANN 算子开发容器)"
-        ask "请选择 (A/B)" "A"
+        ask "$p" "$d"
         case "$REPLY" in
-            a|A|1) QUAY_REPO="quay.io/ascend/vllm-ascend"; break ;;
-            b|B|2) QUAY_REPO="quay.io/ascend/cann"; break ;;
-            *) continue ;;
+            a|A|1) chosen="A"; return 0 ;;
+            b|B|2) chosen="B"; return 0 ;;
+            c|C|3) chosen="C"; return 0 ;;
+            d|D|4) chosen="D"; return 0 ;;
         esac
     done
-    set_quay_url
+}
+pick_ab() {
+    local p="$1" d="$2"
+    while true; do
+        ask "$p" "$d"
+        case "$REPLY" in
+            a|A|1) chosen="A"; return 0 ;;
+            b|B|2) chosen="B"; return 0 ;;
+        esac
+    done
 }
 
 # ---------- 当前 itool 仓库根目录 ----------
@@ -132,54 +145,51 @@ HAVE_FULL_REPO=1
 # ---------- tag 查询 ----------
 TAGS=()
 fetch_official_tags() {
-    local page body
+    local page=1 body count_before new_count
     TAGS=()
-    for ((page=1; page<=QUERY_PAGES; page++)); do
-        body=$(curl -fsSL --connect-timeout "$QUAY_CONNECT_TIMEOUT" --max-time "$QUAY_MAX_TIME" "$QUAY_TAGS_URL/?limit=$TAG_LIMIT&page=$page&onlyActiveTags=true" 2>/dev/null) || true
+    while true; do
+        body=$(curl -fsSL --connect-timeout "$QUAY_CONNECT_TIMEOUT" --max-time "$QUAY_MAX_TIME" \
+            "$QUAY_TAGS_URL/?limit=$TAG_LIMIT&page=$page&onlyActiveTags=true" 2>/dev/null) || true
         if [ -z "$body" ]; then
             [ "$page" = "1" ] && warn "官方 tag 查询超时或不可达（连接时限 ${QUAY_CONNECT_TIMEOUT}s / 总时限 ${QUAY_MAX_TIME}s）。"
-            [ "$page" = "1" ] && warn "为避免长时间卡住，已跳过远程查询；稍后请直接手动输入 tag。"
+            [ "$page" = "1" ] && warn "为避免长时间卡住，已跳过远程查询；稍后请手动输入 tag。"
             break
         fi
 
+        count_before=${#TAGS[@]}
         while IFS= read -r tag; do
             [ -n "$tag" ] || continue
             TAGS+=("$tag")
         done < <(printf '%s' "$body" | grep -oE '"name":[[:space:]]*"[^"]+"' 2>/dev/null | sed -E 's/.*"name":[[:space:]]*"([^"]+)".*/\1/')
 
+        new_count=$(( ${#TAGS[@]} - count_before ))
+        # API 明确标记没有更多页即可停止
         if printf '%s' "$body" | grep -q '"has_additional":[[:space:]]*false'; then
             break
         fi
+        # 本页不足一页，通常说明已到最后
+        if [ "$new_count" -eq 0 ] || [ "$new_count" -lt "$TAG_LIMIT" ]; then
+            break
+        fi
+        # 分页安全上限
+        if [ "$page" -ge "$QUAY_MAX_PAGES" ]; then
+            warn "已达到分页安全上限 ${QUAY_MAX_PAGES} 页，停止查询。"
+            break
+        fi
+        page=$((page+1))
     done
 }
 
-# ---------- 选择官方 tag（手动输入为主，查询只是辅助） ----------
-choose_official_tag() {
-    local keyword="${TAG_FILTER:-${CANN_TAG_FILTER:-}}"
-    local filtered=() i n tag choice example="9.1.0-910b-ubuntu22.04-py3.10"
-    local display_count
+# ---------- 搜索 + 全量选择官方 tag ----------
+# 返回码: 0 = 已选定 SELECTED_IMAGE；2 = 要求重新搜索
+pick_tag_interactive() {
+    local keyword filtered=() i n choice example="v0.27.1" manual_tag
 
-    case "$QUAY_REPO" in
-        *vllm*) example="v0.27.1" ;;
-    esac
+    echo ""
+    ask "请输入搜索关键字（留空列出全部 tag）" "$TAG_SEARCH"
+    keyword="$REPLY"
+    TAG_SEARCH="$keyword"
 
-    # 查询不到时直接手动输入
-    if [ ${#TAGS[@]} -eq 0 ]; then
-        warn "未查询到 $QUAY_REPO 可用 tag（可能当前机器无法访问 quay.io）。"
-        while true; do
-            ask "请输入要拉取的 tag 或完整镜像，例如 $example" ""
-            tag="$REPLY"
-            [ -n "$tag" ] && break
-        done
-        if printf '%s' "$tag" | grep -q '/'; then
-            SELECTED_IMAGE="$tag"
-        else
-            SELECTED_IMAGE="$QUAY_REPO:$tag"
-        fi
-        return 0
-    fi
-
-    # 查询成功了也只是参考；用户可以任意手动输入 tag / 完整镜像
     filtered=()
     if [ -n "$keyword" ]; then
         for tag in "${TAGS[@]}"; do
@@ -192,29 +202,41 @@ choose_official_tag() {
         filtered=("${TAGS[@]}")
     fi
 
-    display_count=${#filtered[@]}
-    [ "$display_count" -gt 20 ] && display_count=20
+    # 完全没查到任何 tag 时退回手动输入
+    if [ ${#filtered[@]} -eq 0 ]; then
+        warn "未查询到 $QUAY_REPO 可用 tag（可能当前机器无法访问 quay.io）。"
+        while true; do
+            ask "请输入要拉取的 tag 或完整镜像，例如 $example" ""
+            manual_tag="$REPLY"
+            [ -n "$manual_tag" ] && break
+        done
+        if printf '%s' "$manual_tag" | grep -q '/'; then
+            SELECTED_IMAGE="$manual_tag"
+        else
+            SELECTED_IMAGE="$QUAY_REPO:$manual_tag"
+        fi
+        return 0
+    fi
 
+    n=${#filtered[@]}
     echo ""
-    echo -e "  ${CYAN}官方查询结果仅作参考，共 ${#filtered[@]} 个匹配 tag:${RESET}"
-    for ((i=0; i<display_count; i++)); do
-        printf '    %3d) %s
-' "$((i+1))" "${filtered[$i]}"
+    echo -e "  ${CYAN}匹配到 ${n} 个 tag，全部列出如下:${RESET}"
+    for ((i=0; i<n; i++)); do
+        printf '    %4d) %s\n' "$((i+1))" "${filtered[$i]}"
     done
     echo ""
 
     while true; do
-        printf '  请输入要拉取的 tag 或完整镜像，或输入 1-%s 选择参考项: ' "$display_count"
+        printf '  输入编号选择 tag，或直接输入 tag/完整镜像（s=重新搜索）: '
         IFS= read -r choice || choice=""
-        if [ -z "$choice" ]; then
-            echo -e "  ${RED}输入不能为空。${RESET}"
-            continue
-        fi
-        if [ "$choice" -ge 1 ] 2>/dev/null && [ "$choice" -le "$display_count" ] 2>/dev/null; then
+        case "$choice" in
+            s|S) return 2 ;;
+            "")  continue ;;
+        esac
+        if [ "$choice" -ge 1 ] 2>/dev/null && [ "$choice" -le "$n" ] 2>/dev/null; then
             SELECTED_IMAGE="$QUAY_REPO:${filtered[$((choice-1))]}"
             return 0
         fi
-        # 非编号输入，一律当作手动 tag / 完整镜像
         if printf '%s' "$choice" | grep -q '/'; then
             SELECTED_IMAGE="$choice"
         else
@@ -223,13 +245,53 @@ choose_official_tag() {
         return 0
     done
 }
- 
+
+# ---------- 选定镜像后：打印 docker pull 命令并让用户选择下一步 ----------
+choose_official_image() {
+    local rc
+    while true; do
+        pick_tag_interactive
+        rc=$?
+        if [ $rc -eq 2 ]; then
+            continue
+        fi
+
+        echo ""
+        echo -e "  ${GREEN}[已选择镜像]${RESET} $SELECTED_IMAGE"
+        echo -e "  ${CYAN}拉取命令:${RESET} docker pull $SELECTED_IMAGE"
+        echo ""
+        echo -e "  ${CYAN}请选择下一步:${RESET}"
+        echo -e "    ${GREEN}A${RESET}) 立即执行 docker pull"
+        echo -e "    ${GREEN}B${RESET}) 重新搜索/选择 tag"
+        echo -e "    ${GREEN}C${RESET}) 退出"
+        pick_abcd "请选择" "A"
+        case "$chosen" in
+            A)
+                if docker image inspect "$SELECTED_IMAGE" >/dev/null 2>&1; then
+                    echo -e "  ${GREEN}[存在]${RESET} 本机已有该镜像，跳过拉取。"
+                    return 0
+                fi
+                if pull_image_smart "$SELECTED_IMAGE"; then
+                    return 0
+                fi
+                echo -e "  ${RED}镜像拉取失败，可重新选择 tag 或退出。${RESET}"
+                ;;
+            B)
+                continue
+                ;;
+            C)
+                echo -e "  ${DIM}已退出。${RESET}"
+                exit 0
+                ;;
+        esac
+    done
+}
 # ---------- 颜色辅助 ----------
 DIM='\033[2m'
 
 echo ""
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "  ${WHITE}  ① 镜像拉取 + 容器实例化（quay.io/ascend/cann 官方向导）${RESET}"
+echo -e "  ${WHITE}  ① 镜像拉取 + 容器实例化（quay.io/ascend/vllm-ascend 官方向导）${RESET}"
 echo -e "  ${WHITE}════════════════════════════════════════════════════════════${RESET}"
 
 have docker || { echo -e "${RED}未找到 docker，请先安装。${RESET}" >&2; exit 1; }
@@ -242,49 +304,23 @@ if [ -n "$IMAGE_ARG" ] && printf '%s' "$IMAGE_ARG" | grep -q '/'; then
     IMAGE_TO_USE="$IMAGE_ARG"
     echo -e "  ${CYAN}[镜像]${RESET} $IMAGE_TO_USE"
 else
-    # 未指定官方仓库时，交互选择 vllm-ascend / cann，或使用 QUAY_REPO 环境变量。
-    [ -z "$QUAY_REPO" ] && choose_official_repo
-    [ -z "$QUAY_REPO" ] && { echo -e "  ${RED}未确定 quay.io 官方仓库。${RESET}" >&2; exit 1; }
+    # 官方仓库固定为 vllm-ascend（也可通过 QUAY_REPO 环境变量覆盖）
     set_quay_url
 
     if [ -n "$IMAGE_ARG" ]; then
         IMAGE_TO_USE="$QUAY_REPO:$IMAGE_ARG"
         echo -e "  ${CYAN}[镜像]${RESET} $IMAGE_TO_USE"
     else
-        echo -e "  ${CYAN}正在查询 $QUAY_REPO 官方可用 tag ...${RESET}"
+        echo -e "  ${CYAN}正在查询 $QUAY_REPO 官方可用 tag（全量分页）...${RESET}"
         fetch_official_tags
         [ ${#TAGS[@]} -gt 0 ] && echo -e "  ${GREEN}[查询成功]${RESET} 共发现 ${#TAGS[@]} 个 tag"
-        choose_official_tag
+        choose_official_image
         IMAGE_TO_USE="$SELECTED_IMAGE"
-        echo -e "  ${GREEN}[已选择镜像]${RESET} $IMAGE_TO_USE"
     fi
 fi
 
 # ==== 2. 容器配置 ====
 # 下面所有配置均支持环境变量预设；未预设时通过 A/B 选项引导，尽量不让客户手输参数。
-chosen=""
-pick_abcd() {
-    local p="$1" d="$2"
-    while true; do
-        ask "$p" "$d"
-        case "$REPLY" in
-            a|A|1) chosen="A"; return 0 ;;
-            b|B|2) chosen="B"; return 0 ;;
-            c|C|3) chosen="C"; return 0 ;;
-            d|D|4) chosen="D"; return 0 ;;
-        esac
-    done
-}
-pick_ab() {
-    local p="$1" d="$2"
-    while true; do
-        ask "$p" "$d"
-        case "$REPLY" in
-            a|A|1) chosen="A"; return 0 ;;
-            b|B|2) chosen="B"; return 0 ;;
-        esac
-    done
-}
 
 NAME_USE="${2:-${NAME:-}}"
 if [ -z "$NAME_USE" ]; then

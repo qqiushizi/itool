@@ -627,21 +627,115 @@ else
     echo -e "  ${YELLOW}⚠ 综合结论: 存在缺失或组合不匹配, 请先补齐/调整后再开始算子开发。${RESET}"
 fi
 
-# 建议命令(只提示, 不自动执行)
-echo -e "  ${YELLOW}下一步建议(按需手动执行):${RESET}"
-if [ -z "$TOOLKIT_DIR" ]; then
-    echo -e "    → 安装/激活 CANN:   bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh"
+# ============================================================
+# 6. 环境补齐 / 下载安装
+# ============================================================
+section "6. 环境补齐 / 下载安装"
+
+# ---------- 定位 itool 仓库根目录（用于跳转安装脚本） ----------
+CHOICE_SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "$PWD")
+CHOICE_REPO_ROOT="${ITOOL_REPO_ROOT:-}"
+if [ -z "$CHOICE_REPO_ROOT" ] && [ -f "$PWD/itool.sh" ]; then CHOICE_REPO_ROOT="$PWD"; fi
+if [ -z "$CHOICE_REPO_ROOT" ] && have git; then
+    CHOICE_REPO_ROOT=$(git -C "$CHOICE_SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)
 fi
+if [ -z "$CHOICE_REPO_ROOT" ]; then
+    CHOICE_D="$CHOICE_SCRIPT_DIR"
+    while [ "$CHOICE_D" != "/" ]; do
+        if [ -f "$CHOICE_D/itool.sh" ]; then CHOICE_REPO_ROOT="$CHOICE_D"; break; fi
+        CHOICE_D=$(dirname "$CHOICE_D")
+    done
+fi
+[ -z "$CHOICE_REPO_ROOT" ] && CHOICE_REPO_ROOT="$CHOICE_SCRIPT_DIR"
+CANN_BASE_DIR="$CHOICE_REPO_ROOT/d.ops_develop/d.install_cann"
+
+# 按芯片推荐 CANN 版本与对应安装目录
+RECOMMEND_CANN_VER="9.1.0"; RECOMMEND_CANN_DIR="a.cann-9.1.0"
+case "$CHIP" in
+    950)            RECOMMEND_CANN_VER="9.0.0";   RECOMMEND_CANN_DIR="b.cann-9.0.0" ;;
+    910A|910B|910C) RECOMMEND_CANN_VER="8.1.RC1"; RECOMMEND_CANN_DIR="d.cann-8.1.RC1" ;;
+    310P)           RECOMMEND_CANN_VER="8.1.RC1"; RECOMMEND_CANN_DIR="d.cann-8.1.RC1" ;;
+esac
+
+show_installed_versions() {
+    echo ""
+    echo -e "  ${CYAN}────────── 目前环境已安装版本 ──────────${RESET}"
+    printf '  %-12s: %s\n' "芯片型号" "$CHIP${CHIP_LIST:+  ($CHIP_LIST)}"
+    printf '  %-12s: %s\n' "Python" "${PY_VER:-未知}"
+    printf '  %-12s: %s\n' "CANN/toolkit" "${CANN_VER:-未识别}"
+    printf '  %-12s: %s\n' "安装目录" "${TOOLKIT_DIR:-未发现}"
+    printf '  %-12s: %s\n' "激活脚本" "${SETENV:-未找到}"
+    printf '  %-12s: %s\n' "torch" "${TORCH_VER:-未安装}"
+    printf '  %-12s: %s\n' "torch_npu" "${TORCH_NPU_VER:-未安装}"
+    echo -e "  ${CYAN}────────────────────────────────────────${RESET}"
+}
+
+run_cann_install() {
+    local dir="$1" ver="$2" mode="$3"
+    local script="$CANN_BASE_DIR/$dir/run.sh" log rc
+    if [ ! -f "$script" ]; then
+        warn "未找到安装脚本: $script"
+        return 1
+    fi
+    echo ""
+    if [ "$mode" = "auto" ]; then
+        echo -e "  ${CYAN}按推荐自动下载/安装 CANN $ver ...${RESET}"
+        log=$(mktemp "/tmp/itool_cann_install.XXXXXX" 2>/dev/null || echo "/tmp/itool_cann_install.log")
+        env ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1 QUIET=1 bash "$script" </dev/null >"$log" 2>&1
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            echo -e "  ${GREEN}✔ 按推荐下载安装成功。${RESET}"
+            grep -E '✔|安装完成|激活脚本|安装与激活完成|acl OK' "$log" 2>/dev/null | tail -10 | sed 's/^/      /' || true
+            return 0
+        fi
+        echo -e "  ${RED}✖ 按推荐下载安装失败(退出码 $rc)。${RESET}"
+        echo -e "  ${YELLOW}失败原因(脚本最近输出):${RESET}"
+        tail -n 15 "$log" 2>/dev/null | sed 's/^/      /'
+        show_installed_versions
+        return 1
+    fi
+    # 交互模式：直接接过去，由安装脚本接管输入输出
+    echo -e "  ${CYAN}跳转安装 CANN $ver ...${RESET}"
+    bash "$script"
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        warn "安装脚本退出码: $rc"
+        show_installed_versions
+    fi
+    return $rc
+}
+
+# 保留有用的下一步提示
 if [ -n "$SETENV" ]; then
-    echo -e "    → 激活当前环境:     source $SETENV"
+    echo -e "  ${YELLOW}提示: 激活当前环境:${RESET} source $SETENV"
 fi
-if [ "$TORCH_FOUND" = "0" ] || [ "$TORCH_NPU_FOUND" = "0" ]; then
-    echo -e "    → 安装 torch/torch_npu: 参考 e.environment/e.setenvs/setenvs.sh 内的 install_torch"
-fi
-[ -n "$RECOMMEND_NOTE" ] && echo -e "    → 版本建议:         $RECOMMEND_NOTE"
-if [ "$MATRIX_OK" = "1" ]; then
-    echo -e "    → 需求分析:         bash d.ops_develop/e.install_opencode/a.install_opencode/run.sh"
-    echo -e "    → 生成工程:         bash d.ops_develop/f.op_agent/run.sh"
-fi
+[ -n "$RECOMMEND_NOTE" ] && echo -e "  ${YELLOW}版本建议:${RESET} $RECOMMEND_NOTE"
+
+# ---------- 安装菜单 ----------
+while true; do
+    echo ""
+    echo -e "  ${CYAN}请选择要下载/安装的环境组件（跳转 d.install_cann）:${RESET}"
+    echo -e "    ${GREEN}1${RESET}) CANN 9.1.0   (较新稳定)"
+    echo -e "    ${GREEN}2${RESET}) CANN 9.0.0   (稳定)"
+    echo -e "    ${GREEN}3${RESET}) CANN 8.2.RC1 (旧芯片兼容)"
+    echo -e "    ${GREEN}4${RESET}) CANN 8.1.RC1 (旧芯片兼容)"
+    echo -e "    ${GREEN}r${RESET}) 按推荐下载安装 (CANN ${RECOMMEND_CANN_VER})"
+    echo -e "    ${GREEN}s${RESET}) 跳过，不安装"
+    printf '  请选择 (1/2/3/4/r/s) [s]: '
+    IFS= read -r MENU_CHOICE || MENU_CHOICE="s"
+    [ -n "$MENU_CHOICE" ] || MENU_CHOICE="s"
+
+    case "$MENU_CHOICE" in
+        1) run_cann_install "a.cann-9.1.0"   "9.1.0"   interactive ;;
+        2) run_cann_install "b.cann-9.0.0"   "9.0.0"   interactive ;;
+        3) run_cann_install "c.cann-8.2.RC1" "8.2.RC1" interactive ;;
+        4) run_cann_install "d.cann-8.1.RC1" "8.1.RC1" interactive ;;
+        r|R) run_cann_install "$RECOMMEND_CANN_DIR" "$RECOMMEND_CANN_VER" auto ;;
+        s|S) echo -e "  ${WHITE}已跳过安装。${RESET}"; break ;;
+        *)   warn "输入无效，请重新选择。"; continue ;;
+    esac
+    echo -e "  ${GREEN}[完成]${RESET} 安装完成后可重新运行本环境检查脚本复查版本。"
+done
+
 echo ""
 echo "完成时间: $(date '+%F %T')"

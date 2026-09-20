@@ -294,4 +294,4 @@ fi
 
 echo ""
 echo -e "${GREEN}✔ 安装与激活完成。${RESET}"
-echo "下一步: 算子需求分析 → bash d.ops_develop/e.op_design/run.sh"
+echo "下一步: 算子需求分析 → bash d.ops_develop/f.op_agent/run.sh"

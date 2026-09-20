@@ -1,11 +1,11 @@
-# h.op_agent — OpenCode / CANNBot Agent 安装
+# e.install_opencode — OpenCode / CANNBot Agent 安装
 
-> 算子开发工作流第 8 步：安装 OpenCode 绿色运行时，并从官方 CANNBot 仓库拉取/接入 skills、agents。
+> 算子开发工作流第 5 步：安装 OpenCode 绿色运行时，并从官方 CANNBot 仓库拉取/接入 skills、agents。
 
 ## 目录
 
 ```text
-h.op_agent/
+e.install_opencode/
 ├── a.install_opencode/         安装 opencode 绿色版（二进制 + 配置）
 │   ├── opencode.tar.gz
 │   └── run.sh
@@ -17,10 +17,10 @@ h.op_agent/
 
 ```bash
 # 1. 解压并启动 opencode（便携模式，不修改系统）
-bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
+bash d.ops_develop/e.install_opencode/a.install_opencode/run.sh
 
 # 2. 安装 CANNBot skills/agents
-bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
+bash d.ops_develop/e.install_opencode/b.install_cannbot_skill/run.sh
 ```
 
 `b.install_cannbot_skill` 默认优先走官方 CANNBot 安装助手：
@@ -44,10 +44,10 @@ CANNBOT_ARGS="--all"           # 传给 install-helper 的额外参数
 
 ```bash
 # 强制使用绿色包内置 skills，不联网
-CANNBOT_USE_BUNDLE=1 bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
+CANNBOT_USE_BUNDLE=1 bash d.ops_develop/e.install_opencode/b.install_cannbot_skill/run.sh
 
 # 只安装到项目目录
-CANNBOT_LEVEL=project bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
+CANNBOT_LEVEL=project bash d.ops_develop/e.install_opencode/b.install_cannbot_skill/run.sh
 ```
 
 ## 官方来源

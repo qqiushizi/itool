@@ -640,8 +640,8 @@ if [ "$TORCH_FOUND" = "0" ] || [ "$TORCH_NPU_FOUND" = "0" ]; then
 fi
 [ -n "$RECOMMEND_NOTE" ] && echo -e "    → 版本建议:         $RECOMMEND_NOTE"
 if [ "$MATRIX_OK" = "1" ]; then
-    echo -e "    → 需求分析:         bash d.ops_develop/e.op_design/run.sh"
-    echo -e "    → 生成工程:         bash d.ops_develop/f.op_build/run.sh"
+    echo -e "    → 需求分析:         bash d.ops_develop/e.install_opencode/a.install_opencode/run.sh"
+    echo -e "    → 生成工程:         bash d.ops_develop/f.op_agent/run.sh"
 fi
 echo ""
 echo "完成时间: $(date '+%F %T')"

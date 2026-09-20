@@ -100,8 +100,8 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 
 ```
 d.ops_develop/
-├── a.llm_config/                     ① 大模型配置管理
-│   ├── run.sh                 新建/修改/删除/测试配置，供 LLM 功能选择
+├── a.llm_config/                     ① 大模型配置管理（可选）
+│   ├── run.sh                 新建/修改/删除/测试配置
 │   └── readme.md              功能说明
 ├── b.image_container/                 ② 镜像拉取 + 容器实例化
 │   ├── run.sh                         输入镜像地址 / 检查或拉取 / 生成 start_container.sh
@@ -115,51 +115,37 @@ d.ops_develop/
 │   ├── c.cann-8.2.RC1/run.sh          8.2.RC1 (旧芯片兼容)
 │   ├── d.cann-8.1.RC1/run.sh          8.1.RC1 (旧芯片兼容)
 │   └── readme.md                      版本说明 + 容器内安装要求
-├── e.op_design/                       ⑤ 算子设计需求分析
-│   ├── run.sh                  选择模型配置 / 手动填写 → op.json + op_spec.md
+├── e.install_opencode/                ⑤ 安装 OpenCode + CANNBot skills
+│   ├── a.install_opencode/    安装 opencode 绿色版
+│   ├── b.install_cannbot_skill/ 接入 CANNBot skills/agents
 │   └── readme.md              功能说明
-├── f.op_build/                        ⑥ 算子工程构建
-│   ├── run.sh                  读取 workspace 下 op.json，用 msopgen 生成 AscendC 工程
-│   └── readme.md              功能说明
-├── g.op_fix/                          ⑦ 大模型辅助修改算子工程
-│   ├── run.sh                  选择工程 + 模型配置，多轮对话修改代码
-│   └── readme.md              功能说明
-└── h.op_agent/                        ⑧ OpenCode/CANNBot Agent 安装
-    ├── readme.md              说明
-    ├── a.install_opencode/    安装 opencode 绿色版
-    └── b.install_cannbot_skill/ 接入 CANNBot skills/agents
+└── f.op_agent/                        ⑥ 算子 Agent 开发/测试/报告
+    ├── run.sh                 打开 OpenCode 开发 → 生成测试 → 测试 → 报告
+    └── readme.md              功能说明
 ```
 
 ### 完整示例
 
 ```bash
-# ① 首次使用先创建大模型配置
-bash d.ops_develop/a.llm_config/run.sh
-
-# ② 拉镜像 + 建容器
+# ① 拉镜像 + 建容器
 bash d.ops_develop/b.image_container/run.sh
 
 # 进入容器
 docker exec -it asc_dev bash
+cd /workspace/itool
 
-# ③ 容器内环境检查（只读, 只给结论和建议）
+# ② 容器内环境检查（只读, 只给结论和建议）
 bash d.ops_develop/c.env_check/run.sh
 
-# ④ 若检查报告提示“安装/更换 CANN”, 再按需执行
+# ③ 若检查报告提示“安装/更换 CANN”, 再按需执行（可跳过）
 bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh
 
-# ⑤ 需求分析：选择模型配置或手动填写 → op.json / op_spec.md
-bash d.ops_develop/e.op_design/run.sh
+# ④ 安装 OpenCode + CANNBot skills
+bash d.ops_develop/e.install_opencode/a.install_opencode/run.sh
+bash d.ops_develop/e.install_opencode/b.install_cannbot_skill/run.sh
 
-# ⑥ 生成算子工程
-bash d.ops_develop/f.op_build/run.sh
-
-# ⑦ 大模型辅助修改算子工程
-bash d.ops_develop/g.op_fix/run.sh
-
-# ⑧ 安装 OpenCode + CANNBot skills（深度算子开发 agent）
-bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
-bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
+# ⑤ 打开算子 Agent：开发 → 生成测试 → 测试 → 报告
+bash d.ops_develop/f.op_agent/run.sh
 ```
 
 ---

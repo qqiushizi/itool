@@ -106,215 +106,78 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 
 ## 3. 算子开发工作流（d.ops_develop）
 
-面向：在客户机器上开发算子 / 基于算子源码改造。完整链路共 8 步，第 8 步为可选安装 OpenCode/CANNBot agent。
+面向：在客户机器上开发昇腾算子。链路收敛为 6 项：
 
 ```
-① a.llm_config      创建/选择大模型配置
-② b.image_container 拉镜像 + 建容器
-③ c.env_check       容器内环境检查（只读，只给建议）
-④ d.install_cann    按需安装/补装 CANN toolkit（检查通过可跳过）
-⑤ e.op_design       选择模型配置/手动填写 → op.json + op_spec.md
-⑥ f.op_build        用 msopgen 生成 AscendC 算子工程
-⑦ g.op_fix          大模型辅助修改算子工程代码
-⑧ h.op_agent        安装 OpenCode + CANNBot skills/agents
+① a.llm_config       可选：大模型配置管理
+② b.image_container  拉镜像 + 建容器
+③ c.env_check        容器内环境检查（只读，只给建议）
+④ d.install_cann     按需安装/补装 CANN toolkit（检查通过可跳过）
+⑤ e.install_opencode 安装 OpenCode + CANNBot skills/agents
+⑥ f.op_agent         打开 OpenCode 开发 → 生成测试 → 测试 → 报告
 ```
 
-### 3.1 ① 大模型配置管理
-
-```bash
-bash d.ops_develop/a.llm_config/run.sh
-```
-
-用于：
-
-- 新建配置
-- 修改配置
-- 删除配置
-- 测试配置
-- 设置当前使用的配置
-
-配置保存在：
-
-```text
-d.ops_develop/workspace/llm_configs/<配置名>.json
-```
-
-后续 `e.op_design` 和 `g.op_fix` 只选择配置，不再要求用户重新输入 API Base / Key / Model。
-
-### 3.2 ② 镜像拉取 + 容器实例化
+### 3.1 ② 镜像拉取 + 容器实例化
 
 ```bash
 bash d.ops_develop/b.image_container/run.sh
 ```
 
-脚本会询问镜像地址和容器名称（默认 `asc_dev`）。也支持非交互：
-
-```bash
-IMAGE=quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 bash d.ops_develop/b.image_container/run.sh
-
-bash d.ops_develop/b.image_container/run.sh quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.10 asc_dev
-```
-
-自动流程：
-
-1. `docker image inspect` 检查本机是否已有该镜像
-2. 不存在则自动 `docker pull`
-3. 获取镜像稳定 ID
-4. 自动检测当前机器存在的 `/dev/davinci*`、驱动目录、`dcmi`、`npu-smi`
-5. 创建工作目录并生成 `start_container.sh`
-6. 立即启动容器
-
-默认宿主机工作目录：
-
-```text
-~/ascend_ops_workspace
-```
-
-挂载关系：
-
-```text
-宿主机 ~/ascend_ops_workspace  →  容器 /workspace
-```
-
-可通过 `WORK_DIR` 覆盖：
-
-```bash
-WORK_DIR=/data/ops bash d.ops_develop/b.image_container/run.sh
-```
-
-生成的 `start_container.sh` 是**当前机器专用**模板；同一台机器可反复使用，换机器应重新运行。
-
-### 3.3 ③ 容器内环境检查（只读，只给建议）
-
-启动容器后进入容器：
+进入容器：
 
 ```bash
 docker exec -it asc_dev bash
+cd /workspace/itool
 ```
 
-然后在容器内运行：
+### 3.2 ③ 容器内环境检查（只读，只给建议）
 
 ```bash
 bash d.ops_develop/c.env_check/run.sh
 ```
 
-脚本在**当前容器环境**检查：
-
-- 芯片型号：优先 `npu-smi info`
-- 软件版本：`Python` ↔ `torch` ↔ `torch_npu` ↔ `CANN` ↔ 芯片型号
-- CANN 安装目录和 `set_env.sh` 激活脚本
-
-该脚本只提示，不执行：
-
-- 缺 CANN / 版本不符：提示进入 `d.install_cann` 选版本补装
-- 检查通过：提示进入 `e.op_design`
-
-### 3.4 ④ 按需安装/补装 CANN toolkit（容器内）
-
-> 仅当环境检查报告建议“安装/更换 CANN”时再执行；检查通过可跳过。
+### 3.3 ④ 按需安装/补装 CANN toolkit（容器内）
 
 ```bash
-# 推荐 9.1.0
 bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh
-
-# 9.0.0
-bash d.ops_develop/d.install_cann/b.cann-9.0.0/run.sh
 ```
 
-版本目录：
-
-| 目录 | CANN 版本 | 说明 |
-|---|---|---|
-| `a.cann-9.1.0/` | `9.1.0` | 推荐 |
-| `b.cann-9.0.0/` | `9.0.0` | 稳定 |
-| `c.cann-8.2.RC1/` | `8.2.RC1` | 旧芯片兼容 |
-| `d.cann-8.1.RC1/` | `8.1.RC1` | 旧芯片兼容 |
-
-容器内默认安装到：
-
-```text
-/workspace/Ascend/ascend-toolkit-<version>
-```
-
-### 3.5 ⑤ 算子需求分析 → 生成 op.json
+### 3.4 ⑤ 安装 OpenCode + CANNBot skills/agents
 
 ```bash
-bash d.ops_develop/e.op_design/run.sh
+# 安装 opencode 绿色版
+bash d.ops_develop/e.install_opencode/a.install_opencode/run.sh
+
+# 安装 CANNBot skills/agents
+bash d.ops_develop/e.install_opencode/b.install_cannbot_skill/run.sh
 ```
 
-运行后可选：
+`e.install_opencode/b.install_cannbot_skill` 默认优先走官方 CANNBot 安装助手；网络不可用时回退到绿色包内置 skills。
 
-- `[1] / [2]` 大模型分析：从 `a.llm_config` 创建的配置中选择
-- `[3]` 手动填写
-
-生成（默认在 `d.ops_develop/workspace/` 下归档）：
-
-```text
-d.ops_develop/workspace/op_design_<算子名>/
-├── op.json
-└── op_spec.md
-```
-
-### 3.6 ⑥ 生成算子工程
+### 3.5 ⑥ 算子 Agent 开发/测试/报告
 
 ```bash
-# 自动在 d.ops_develop/workspace/ 下查找 op.json
-bash d.ops_develop/f.op_build/run.sh
-
-# 或明确指定 op.json
-bash d.ops_develop/f.op_build/run.sh d.ops_develop/workspace/op_design_MatMulCustom/op.json
+bash d.ops_develop/f.op_agent/run.sh
 ```
 
-工程固定用 AscendC/C++ 模板生成，命令等价于：
+菜单包含：
 
-```bash
-msopgen gen -i <op.json> -f tf -lan cpp -c <compute_unit> -out <输出目录>
-```
+1. 选择/新建算子工程
+2. 打开 OpenCode 开发
+3. 生成测试用例
+4. 编译工程
+5. 运行测试
+6. 生成测试报告
 
-输出工程默认在：
+生成物归档：
 
 ```text
 d.ops_develop/workspace/op_build_<算子名>/
+└── report/
+    ├── build.log
+    ├── test.log
+    └── test_report.md
 ```
-
-### 3.7 ⑦ 大模型辅助修改算子工程
-
-```bash
-bash d.ops_develop/g.op_fix/run.sh
-```
-
-脚本会：
-
-1. 列出 `workspace/` 下的算子工程
-2. 从 `a.llm_config` 的配置中选择一个
-3. 进入多轮对话修改模式
-4. 保持上下文记忆
-
-上下文按工程保存：
-
-```text
-workspace/op_build_<算子名>/.itool/op_fix_history.jsonl
-```
-
-### 3.8 ⑧ 安装 OpenCode + CANNBot skills/agents
-
-```bash
-# 解压并启动 opencode（便携模式）
-bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
-
-# 安装 opencode + CANNBot skills/agents 到用户配置目录
-bash d.ops_develop/h.op_agent/b.install_cannbot_skill/run.sh
-```
-
-绿色包内置：
-
-```text
-skills : 74 个
-agents : 18 个
-版本   : CANNBot 1.1.0
-```
-
-非 root 用户默认安装到 `$HOME/.local/bin/opencode`，配置目录为 `${XDG_CONFIG_HOME:-$HOME/.config}/opencode`。
 
 ## 4. 常见问题
 

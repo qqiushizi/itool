@@ -4,8 +4,7 @@
 
 ```text
 workspace/
-├── op_design_<算子名>/    # e.op_design 输出：op.json + op_spec.md
-├── op_build_<算子名>/     # f.op_build 输出：msopgen 算子工程
+├── op_build_<算子名>/     # f.op_agent 输出：算子开发/测试工程
 └── ...
 ```
 

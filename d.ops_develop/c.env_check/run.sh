@@ -647,14 +647,14 @@ if [ -z "$CHOICE_REPO_ROOT" ]; then
     done
 fi
 [ -z "$CHOICE_REPO_ROOT" ] && CHOICE_REPO_ROOT="$CHOICE_SCRIPT_DIR"
-CANN_BASE_DIR="$CHOICE_REPO_ROOT/d.ops_develop/d.install_cann"
+INSTALL_BASE_DIR="$CHOICE_REPO_ROOT/f.installation/a.install_ascend"
 
-# 按芯片推荐 CANN 版本与对应安装目录
-RECOMMEND_CANN_VER="9.1.0"; RECOMMEND_CANN_DIR="a.cann-9.1.0"
+# 按芯片推荐 CANN 版本与对应安装脚本
+RECOMMEND_CANN_LABEL="9.1.0"; RECOMMEND_CANN_REL="d.install_cann/c.cann-9.1.0"
 case "$CHIP" in
-    950)            RECOMMEND_CANN_VER="9.0.0";   RECOMMEND_CANN_DIR="b.cann-9.0.0" ;;
-    910A|910B|910C) RECOMMEND_CANN_VER="8.1.RC1"; RECOMMEND_CANN_DIR="d.cann-8.1.RC1" ;;
-    310P)           RECOMMEND_CANN_VER="8.1.RC1"; RECOMMEND_CANN_DIR="d.cann-8.1.RC1" ;;
+    950)            RECOMMEND_CANN_LABEL="9.0.0 (950)"; RECOMMEND_CANN_REL="d.install_cann/b.cann-9.0.0/a.950_cann-9.0.0" ;;
+    910A|910B|910C) RECOMMEND_CANN_LABEL="9.0.0";       RECOMMEND_CANN_REL="d.install_cann/b.cann-9.0.0" ;;
+    310P)           RECOMMEND_CANN_LABEL="8.5.0";       RECOMMEND_CANN_REL="d.install_cann/a.cann-8.5.0" ;;
 esac
 
 show_installed_versions() {
@@ -670,22 +670,24 @@ show_installed_versions() {
     echo -e "  ${CYAN}────────────────────────────────────────${RESET}"
 }
 
-run_cann_install() {
-    local dir="$1" ver="$2" mode="$3"
-    local script="$CANN_BASE_DIR/$dir/run.sh" log rc
+# 跳转执行 f.installation/a.install_ascend 下的安装脚本
+# $1=相对路径  $2=标签  $3=mode(interactive|auto)
+run_install_script() {
+    local rel="$1" label="$2" mode="$3"
+    local script="$INSTALL_BASE_DIR/$rel/run.sh" log rc
     if [ ! -f "$script" ]; then
         warn "未找到安装脚本: $script"
         return 1
     fi
     echo ""
     if [ "$mode" = "auto" ]; then
-        echo -e "  ${CYAN}按推荐自动下载/安装 CANN $ver ...${RESET}"
-        log=$(mktemp "/tmp/itool_cann_install.XXXXXX" 2>/dev/null || echo "/tmp/itool_cann_install.log")
-        env ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1 QUIET=1 bash "$script" </dev/null >"$log" 2>&1
+        echo -e "  ${CYAN}按推荐自动下载/安装: $label ...${RESET}"
+        log=$(mktemp "/tmp/itool_install_ascend.XXXXXX" 2>/dev/null || echo "/tmp/itool_install_ascend.log")
+        bash "$script" </dev/null >"$log" 2>&1
         rc=$?
         if [ $rc -eq 0 ]; then
-            echo -e "  ${GREEN}✔ 按推荐下载安装成功。${RESET}"
-            grep -E '✔|安装完成|激活脚本|安装与激活完成|acl OK' "$log" 2>/dev/null | tail -10 | sed 's/^/      /' || true
+            echo -e "  ${GREEN}✔ 按推荐下载安装成功: $label${RESET}"
+            tail -n 15 "$log" 2>/dev/null | sed 's/^/      /'
             return 0
         fi
         echo -e "  ${RED}✖ 按推荐下载安装失败(退出码 $rc)。${RESET}"
@@ -695,7 +697,7 @@ run_cann_install() {
         return 1
     fi
     # 交互模式：直接接过去，由安装脚本接管输入输出
-    echo -e "  ${CYAN}跳转安装 CANN $ver ...${RESET}"
+    echo -e "  ${CYAN}跳转安装: $label ...${RESET}"
     bash "$script"
     rc=$?
     if [ $rc -ne 0 ]; then
@@ -703,6 +705,46 @@ run_cann_install() {
         show_installed_versions
     fi
     return $rc
+}
+
+# CANN 版本子菜单
+choose_cann() {
+    local c
+    echo ""
+    echo -e "  ${CYAN}选择 CANN 版本:${RESET}"
+    echo -e "    ${GREEN}1${RESET}) CANN 8.5.0"
+    echo -e "    ${GREEN}2${RESET}) CANN 9.0.0 (910b ops)"
+    echo -e "    ${GREEN}3${RESET}) CANN 9.0.0 (950 ops)"
+    echo -e "    ${GREEN}4${RESET}) CANN 9.1.0"
+    printf '  请选择 (1/2/3/4) [4]: '
+    IFS= read -r c || c="4"
+    [ -n "$c" ] || c="4"
+    case "$c" in
+        1) run_install_script "d.install_cann/a.cann-8.5.0" "CANN 8.5.0" interactive ;;
+        2) run_install_script "d.install_cann/b.cann-9.0.0" "CANN 9.0.0" interactive ;;
+        3) run_install_script "d.install_cann/b.cann-9.0.0/a.950_cann-9.0.0" "CANN 9.0.0(950)" interactive ;;
+        4) run_install_script "d.install_cann/c.cann-9.1.0" "CANN 9.1.0" interactive ;;
+        *) warn "输入无效。"; return ;;
+    esac
+}
+
+# Triton 版本子菜单
+choose_triton() {
+    local t
+    echo ""
+    echo -e "  ${CYAN}选择 Triton-Ascend 版本:${RESET}"
+    echo -e "    ${GREEN}1${RESET}) 3.2.0"
+    echo -e "    ${GREEN}2${RESET}) 3.2.1"
+    echo -e "    ${GREEN}3${RESET}) 3.2.2"
+    printf '  请选择 (1/2/3) [3]: '
+    IFS= read -r t || t="3"
+    [ -n "$t" ] || t="3"
+    case "$t" in
+        1) run_install_script "r.install_triton/a.triton-ascend-3.2.0" "Triton-Ascend 3.2.0" interactive ;;
+        2) run_install_script "r.install_triton/b.triton-ascend-3.2.1" "Triton-Ascend 3.2.1" interactive ;;
+        3) run_install_script "r.install_triton/c.triton-ascend-3.2.2" "Triton-Ascend 3.2.2" interactive ;;
+        *) warn "输入无效。"; return ;;
+    esac
 }
 
 # 保留有用的下一步提示
@@ -714,23 +756,31 @@ fi
 # ---------- 安装菜单 ----------
 while true; do
     echo ""
-    echo -e "  ${CYAN}请选择要下载/安装的环境组件（跳转 d.install_cann）:${RESET}"
-    echo -e "    ${GREEN}1${RESET}) CANN 9.1.0   (较新稳定)"
-    echo -e "    ${GREEN}2${RESET}) CANN 9.0.0   (稳定)"
-    echo -e "    ${GREEN}3${RESET}) CANN 8.2.RC1 (旧芯片兼容)"
-    echo -e "    ${GREEN}4${RESET}) CANN 8.1.RC1 (旧芯片兼容)"
-    echo -e "    ${GREEN}r${RESET}) 按推荐下载安装 (CANN ${RECOMMEND_CANN_VER})"
+    echo -e "  ${CYAN}请选择要下载/安装的环境组件（跳转 f.installation/a.install_ascend）:${RESET}"
+    echo -e "    ${GREEN}1${RESET}) CANN toolkit"
+    echo -e "    ${GREEN}2${RESET}) PyTorch"
+    echo -e "    ${GREEN}3${RESET}) Triton-Ascend"
+    echo -e "    ${GREEN}4${RESET}) TileLang"
+    echo -e "    ${GREEN}5${RESET}) Python (Miniforge)"
+    echo -e "    ${GREEN}6${RESET}) GCC 11"
+    echo -e "    ${GREEN}7${RESET}) mamba-ssm"
+    echo -e "    ${GREEN}8${RESET}) Docker"
+    echo -e "    ${GREEN}r${RESET}) 按推荐下载安装 (CANN ${RECOMMEND_CANN_LABEL})"
     echo -e "    ${GREEN}s${RESET}) 跳过，不安装"
-    printf '  请选择 (1/2/3/4/r/s) [s]: '
+    printf '  请选择 (1-8/r/s) [s]: '
     IFS= read -r MENU_CHOICE || MENU_CHOICE="s"
     [ -n "$MENU_CHOICE" ] || MENU_CHOICE="s"
 
     case "$MENU_CHOICE" in
-        1) run_cann_install "a.cann-9.1.0"   "9.1.0"   interactive ;;
-        2) run_cann_install "b.cann-9.0.0"   "9.0.0"   interactive ;;
-        3) run_cann_install "c.cann-8.2.RC1" "8.2.RC1" interactive ;;
-        4) run_cann_install "d.cann-8.1.RC1" "8.1.RC1" interactive ;;
-        r|R) run_cann_install "$RECOMMEND_CANN_DIR" "$RECOMMEND_CANN_VER" auto ;;
+        1) choose_cann ;;
+        2) run_install_script "e.install_torch" "PyTorch" interactive ;;
+        3) choose_triton ;;
+        4) run_install_script "t.install_tilelang" "TileLang" interactive ;;
+        5) run_install_script "b.install_python" "Python (Miniforge)" interactive ;;
+        6) run_install_script "g.install_gcc" "GCC 11" interactive ;;
+        7) run_install_script "m.install_mamba" "mamba-ssm" interactive ;;
+        8) run_install_script "a.install_docker" "Docker" interactive ;;
+        r|R) run_install_script "$RECOMMEND_CANN_REL" "$RECOMMEND_CANN_LABEL" auto ;;
         s|S) echo -e "  ${WHITE}已跳过安装。${RESET}"; break ;;
         *)   warn "输入无效，请重新选择。"; continue ;;
     esac

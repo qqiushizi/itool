@@ -1,6 +1,6 @@
 # c.env_check — 算子开发环境检查
 
-> 算子在开发容器内执行；检查阶段**只读**、只给结论和建议；检查结束后可选跳转到 `d.install_cann` 下载/安装缺失环境。
+> 算子在开发容器内执行；检查阶段**只读**、只给结论和建议；检查结束后可选跳转到 `f.installation/a.install_ascend` 下载/安装缺失环境（torch / cann / triton / tilelang 等）。
 
 ## 功能
 
@@ -22,8 +22,8 @@ bash d.ops_develop/c.env_check/run.sh
    - torch ↔ torch_npu
    - 芯片型号 ↔ CANN ↔ torch_npu
 
-3. **环境补齐 / 下载安装（新）**
-   - 检查结束后进入交互菜单，客户可选择下载/安装哪个 CANN 版本，跳转 `d.install_cann` 对应脚本
+3. **环境补齐 / 下载安装**
+   - 检查结束后进入交互菜单，客户可选择下载/安装哪个组件，跳转 `f.installation/a.install_ascend` 下对应脚本
    - 提供 `按推荐下载安装` 选项：按芯片型号自动选择推荐 CANN 版本，自动下载+安装
    - 推荐安装失败时，显示失败原因与脚本最近输出，并列出**目前已安装环境版本**
 
@@ -45,22 +45,28 @@ bash d.ops_develop/c.env_check/run.sh
 
 ## 环境补齐 / 下载安装菜单
 
-检查汇总报告输出后，会进入一个交互菜单：
+检查汇总报告输出后，会进入一个交互菜单（跳转 `f.installation/a.install_ascend`）：
 
 ```text
-请选择要下载/安装的环境组件（跳转 d.install_cann）:
-  1) CANN 9.1.0   (较新稳定)
-  2) CANN 9.0.0   (稳定)
-  3) CANN 8.2.RC1 (旧芯片兼容)
-  4) CANN 8.1.RC1 (旧芯片兼容)
+请选择要下载/安装的环境组件（跳转 f.installation/a.install_ascend）:
+  1) CANN toolkit
+  2) PyTorch
+  3) Triton-Ascend
+  4) TileLang
+  5) Python (Miniforge)
+  6) GCC 11
+  7) mamba-ssm
+  8) Docker
   r) 按推荐下载安装 (CANN <推荐版本>)
   s) 跳过，不安装
 ```
 
-- `1/2/3/4`：跳转 `d.install_cann/<版本目录>/run.sh`，由该安装脚本接管交互（下载 → 安装 → 激活）。
-- `r`：按芯片型号自动选择推荐 CANN 版本，并以 `ITOOL_AUTO_DL=1 ITOOL_AUTO_INSTALL=1` 自动下载安装。
-  - 推荐规则：`950 → 9.0.0`；`910A/B/C → 8.1.RC1`；`310P → 8.1.RC1`；未知芯片 → `9.1.0`。
-  - 成功：显示安装成功的关键日志。
+- `1`：CANN 版本子菜单（`8.5.0 / 9.0.0(910b) / 9.0.0(950) / 9.1.0`），跳转 `d.install_cann/...` 对应 `run.sh`。
+- `2/4/5/6/7/8`：分别跳转 `e.install_torch / t.install_tilelang / b.install_python / g.install_gcc / m.install_mamba / a.install_docker` 的 `run.sh`，由安装脚本接管下载/安装。
+- `3`：Triton 版本子菜单（`3.2.0 / 3.2.1 / 3.2.2`），跳转 `r.install_triton/...` 对应 `run.sh`。
+- `r`：按芯片型号自动选择推荐 CANN 版本，自动下载安装。
+  - 推荐规则：`950 → 9.0.0(950)`；`910A/B/C → 9.0.0`；`310P → 8.5.0`；未知芯片 → `9.1.0`。
+  - 成功：显示安装脚本最近输出。
   - 失败：显示失败原因与脚本最近输出，并列出目前环境已安装版本。
 - `s`：跳过，不安装。
 

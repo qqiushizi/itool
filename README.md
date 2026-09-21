@@ -100,28 +100,20 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 
 ```
 d.ops_develop/
-├── a.llm_config/                     ① 大模型配置管理（可选）
-│   ├── run.sh                 新建/修改/删除/测试配置
+├── a.opencode_api/                    ① 配置 OpenCode 的 API
+│   ├── run.sh                 交互式录入 baseURL / apiKey / model / provider
 │   └── readme.md              功能说明
 ├── b.image_container/                 ② 镜像拉取 + 容器实例化
-│   ├── run.sh                         输入镜像地址 / 检查或拉取 / 生成 start_container.sh
-│   └── readme.md                      功能说明
-├── c.env_check/                       ③ 容器内环境检查（只读）
-│   ├── run.sh                         芯片识别 + 版本兼容矩阵 + 建议
-│   └── readme.md                      功能说明
-├── d.install_cann/                    ④ 按需安装/补装 CANN toolkit
-│   ├── a.cann-9.1.0/run.sh            9.1.0 (推荐)
-│   ├── b.cann-9.0.0/run.sh            9.0.0
-│   ├── c.cann-8.2.RC1/run.sh          8.2.RC1 (旧芯片兼容)
-│   ├── d.cann-8.1.RC1/run.sh          8.1.RC1 (旧芯片兼容)
-│   └── readme.md                      版本说明 + 容器内安装要求
-├── e.install_opencode/                ⑤ 安装 OpenCode + CANNBot skills
-│   ├── a.install_opencode/    安装 opencode 绿色版
-│   ├── b.install_cannbot_skill/ 接入 CANNBot skills/agents
+│   ├── run.sh                 查询/输入镜像、拉取、生成 start_container.sh
 │   └── readme.md              功能说明
-└── f.op_agent/                        ⑥ 算子 Agent 开发/测试/报告
-    ├── run.sh                 打开 OpenCode 开发 → 生成测试 → 测试 → 报告
-    └── readme.md              功能说明
+├── c.env_check/                       ③ 容器内环境检查（只读）
+│   ├── run.sh                 芯片识别 + 版本兼容矩阵 + 建议
+│   └── readme.md              功能说明
+└── h.op_agent/                        ④ OpenCode 运行时 + Skill 管理
+    ├── a.install_opencode/   安装 opencode 绿色版（即开即用）
+    ├── b.skill_store/        离线 Skill 仓库（选装/卸载）
+    ├── c.update_skill/       联网更新 skill 仓库
+    └── readme.md             说明
 ```
 
 ### 完整示例
@@ -137,15 +129,13 @@ cd /workspace/itool
 # ② 容器内环境检查（只读, 只给结论和建议）
 bash d.ops_develop/c.env_check/run.sh
 
-# ③ 若检查报告提示“安装/更换 CANN”, 再按需执行（可跳过）
-bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh
+# ③ 容器内环境检查（只读）
+bash d.ops_develop/c.env_check/run.sh
 
-# ④ 安装 OpenCode + CANNBot skills
-bash d.ops_develop/e.install_opencode/a.install_opencode/run.sh
-bash d.ops_develop/e.install_opencode/b.install_cannbot_skill/run.sh
-
-# ⑤ 打开算子 Agent：开发 → 生成测试 → 测试 → 报告
-bash d.ops_develop/f.op_agent/run.sh
+# ④ 安装 OpenCode 运行时 + 选装 Skill
+bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
+bash d.ops_develop/h.op_agent/b.skill_store/run.sh
+bash d.ops_develop/h.op_agent/c.update_skill/run.sh   # 联网更新 skill 仓库（可选）
 ```
 
 ---

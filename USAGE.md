@@ -94,7 +94,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/menu?path
 # → HAS_RUN	0
 #   FOLDER	b.image_container	a
 #   FOLDER	c.env_check	b
-#   FOLDER	d.install_cann	c
+#   FOLDER	h.op_agent	c
 #   ...
 
 # 打包下载 + 预览
@@ -106,18 +106,25 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 
 ## 3. 算子开发工作流（d.ops_develop）
 
-面向：在客户机器上开发昇腾算子。链路收敛为 6 项：
+面向：在客户机器上开发昇腾算子。链路收敛为 4 项：
 
 ```
-① a.llm_config       可选：大模型配置管理
+① a.opencode_api     配置 OpenCode 的 API
 ② b.image_container  拉镜像 + 建容器
 ③ c.env_check        容器内环境检查（只读，只给建议）
-④ d.install_cann     按需安装/补装 CANN toolkit（检查通过可跳过）
-⑤ e.install_opencode 安装 OpenCode + CANNBot skills/agents
-⑥ f.op_agent         打开 OpenCode 开发 → 生成测试 → 测试 → 报告
+④ h.op_agent         安装 opencode 运行时装 + 离线 Skill 仓库 + 联网更新
 ```
 
-### 3.1 ② 镜像拉取 + 容器实例化
+### 3.1 ① 配置 OpenCode 的 API
+
+```bash
+bash d.ops_develop/a.opencode_api/run.sh
+```
+
+录入、查看、测试 OpenCode 用的 OpenAI 兼容接口（baseURL / apiKey / model / provider），
+写入 `~/.config/opencode/opencode.json`。
+
+### 3.2 ② 镜像拉取 + 容器实例化
 
 ```bash
 bash d.ops_develop/b.image_container/run.sh
@@ -130,53 +137,23 @@ docker exec -it asc_dev bash
 cd /workspace/itool
 ```
 
-### 3.2 ③ 容器内环境检查（只读，只给建议）
+### 3.3 ③ 容器内环境检查（只读，只给建议）
 
 ```bash
 bash d.ops_develop/c.env_check/run.sh
 ```
 
-### 3.3 ④ 按需安装/补装 CANN toolkit（容器内）
+### 3.4 ④ 安装 OpenCode 运行时 + Skill 管理
 
 ```bash
-bash d.ops_develop/d.install_cann/a.cann-9.1.0/run.sh
-```
+# 安装 opencode 绿色版（即开即用）
+bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
 
-### 3.4 ⑤ 安装 OpenCode + CANNBot skills/agents
+# 离线选装/卸载 Skill
+bash d.ops_develop/h.op_agent/b.skill_store/run.sh
 
-```bash
-# 安装 opencode 绿色版
-bash d.ops_develop/e.install_opencode/a.install_opencode/run.sh
-
-# 安装 CANNBot skills/agents
-bash d.ops_develop/e.install_opencode/b.install_cannbot_skill/run.sh
-```
-
-`e.install_opencode/b.install_cannbot_skill` 默认优先走官方 CANNBot 安装助手；网络不可用时回退到绿色包内置 skills。
-
-### 3.5 ⑥ 算子 Agent 开发/测试/报告
-
-```bash
-bash d.ops_develop/f.op_agent/run.sh
-```
-
-菜单包含：
-
-1. 选择/新建算子工程
-2. 打开 OpenCode 开发
-3. 生成测试用例
-4. 编译工程
-5. 运行测试
-6. 生成测试报告
-
-生成物归档：
-
-```text
-d.ops_develop/workspace/op_build_<算子名>/
-└── report/
-    ├── build.log
-    ├── test.log
-    └── test_report.md
+# 联网更新 skill 仓库（开发机，需 git + python3 + 网络）
+bash d.ops_develop/h.op_agent/c.update_skill/run.sh
 ```
 
 ## 4. 常见问题

@@ -8,7 +8,7 @@
 
 ```
 d.ops_develop/
-├── a.opencode_api/                     ① 配置 OpenCode 的 API
+├── a.llm_api/                     ① 配置 OpenCode 的 API
 │   ├── run.sh                 录入 baseURL / apiKey / model / provider
 │   └── readme.md              功能说明
 ├── b.image_container/                 ② 镜像拉取 + 容器实例化
@@ -28,7 +28,7 @@ d.ops_develop/
 
 ```bash
 # ① 设置 OpenCode 的 API（先录入一张模型配置）
-bash d.ops_develop/a.opencode_api/run.sh
+bash d.ops_develop/a.llm_api/run.sh
 
 # ② 拉镜像 + 建容器
 bash d.ops_develop/b.image_container/run.sh

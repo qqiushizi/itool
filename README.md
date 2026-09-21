@@ -100,7 +100,7 @@ ITOOL_SERVER=http://<server-A>:5170 bash menu
 
 ```
 d.ops_develop/
-├── a.opencode_api/                    ① 配置 OpenCode 的 API
+├── a.llm_api/                    ① 配置 OpenCode 的 API
 │   ├── run.sh                 交互式录入 baseURL / apiKey / model / provider
 │   └── readme.md              功能说明
 ├── b.image_container/                 ② 镜像拉取 + 容器实例化

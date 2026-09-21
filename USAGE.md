@@ -109,7 +109,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 面向：在客户机器上开发昇腾算子。链路收敛为 4 项：
 
 ```
-① a.opencode_api     配置 OpenCode 的 API
+① a.llm_api     配置 OpenCode 的 API
 ② b.image_container  拉镜像 + 建容器
 ③ c.env_check        容器内环境检查（只读，只给建议）
 ④ d.op_agent         安装 opencode 运行时装 + 离线 Skill 仓库 + 联网更新
@@ -118,7 +118,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 ### 3.1 ① 配置 OpenCode 的 API
 
 ```bash
-bash d.ops_develop/a.opencode_api/run.sh
+bash d.ops_develop/a.llm_api/run.sh
 ```
 
 录入、查看、测试 OpenCode 用的 OpenAI 兼容接口（baseURL / apiKey / model / provider），

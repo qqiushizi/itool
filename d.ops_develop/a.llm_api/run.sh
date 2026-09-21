@@ -7,10 +7,10 @@
 #   写入 opencode 的配置文件 opencode.json, 供其调用大模型。
 #
 # 用法:
-#   bash a.opencode_api/run.sh                    # 交互式纵向菜单
-#   bash a.opencode_api/run.sh config             # 直接进入「配置 API」
-#   bash a.opencode_api/run.sh view               # 只打印当前配置
-#   bash a.opencode_api/run.sh test               # 只测试连通性
+#   bash a.llm_api/run.sh                    # 交互式纵向菜单
+#   bash a.llm_api/run.sh config             # 直接进入「配置 API」
+#   bash a.llm_api/run.sh view               # 只打印当前配置
+#   bash a.llm_api/run.sh test               # 只测试连通性
 #
 # 非交互环境变量(有值则不再交互询问):
 #   OPENCODE_API_BASE    OpenAI 兼容 baseURL

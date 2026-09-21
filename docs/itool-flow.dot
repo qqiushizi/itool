@@ -47,7 +47,7 @@ digraph itool {
     fontcolor="#57606a";
     fontsize=15;
 
-    S0 [label="① a.opencode_api\n配置 OpenCode 的 API", fillcolor="#dafbe1", color="#2da44e"];
+    S0 [label="① a.llm_api\n配置 OpenCode 的 API", fillcolor="#dafbe1", color="#2da44e"];
     S1 [label="② b.image_container\n输入镜像 + 容器实例化", fillcolor="#dafbe1", color="#2da44e"];
     S2 [label="③ c.env_check\n容器内环境检查(只读)", fillcolor="#dafbe1", color="#2da44e"];
     S3 [label="④ d.op_agent\nOpenCode 运行时 + Skill 管理", fillcolor="#fff8c5", color="#d4a72c"];

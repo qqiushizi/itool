@@ -94,7 +94,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/menu?path
 # → HAS_RUN	0
 #   FOLDER	b.image_container	a
 #   FOLDER	c.env_check	b
-#   FOLDER	h.op_agent	c
+#   FOLDER	d.op_agent	c
 #   ...
 
 # 打包下载 + 预览
@@ -112,7 +112,7 @@ curl -s -H 'Authorization: Bearer <token>' 'http://<server-A>:5170/api/cat?path=
 ① a.opencode_api     配置 OpenCode 的 API
 ② b.image_container  拉镜像 + 建容器
 ③ c.env_check        容器内环境检查（只读，只给建议）
-④ h.op_agent         安装 opencode 运行时装 + 离线 Skill 仓库 + 联网更新
+④ d.op_agent         安装 opencode 运行时装 + 离线 Skill 仓库 + 联网更新
 ```
 
 ### 3.1 ① 配置 OpenCode 的 API
@@ -147,13 +147,13 @@ bash d.ops_develop/c.env_check/run.sh
 
 ```bash
 # 安装 opencode 绿色版（即开即用）
-bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
+bash d.ops_develop/d.op_agent/a.install_opencode/run.sh
 
 # 离线选装/卸载 Skill
-bash d.ops_develop/h.op_agent/b.skill_store/run.sh
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh
 
 # 联网更新 skill 仓库（开发机，需 git + python3 + 网络）
-bash d.ops_develop/h.op_agent/c.update_skill/run.sh
+bash d.ops_develop/d.op_agent/c.update_skill/run.sh
 ```
 
 ## 4. 常见问题

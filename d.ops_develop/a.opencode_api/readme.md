@@ -1,7 +1,7 @@
 # a.opencode_api — 配置 OpenCode 的 API
 
 > 算子开发工作流第 1 步：给 OpenCode 录入 OpenAI 兼容接口（baseURL / apiKey / model / provider），
-> 写入 opencode 的配置文件，供 `h.op_agent` 安装的 opencode 直接调用大模型。
+> 写入 opencode 的配置文件，供 `d.op_agent` 安装的 opencode 直接调用大模型。
 
 ## 做什么
 

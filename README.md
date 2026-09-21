@@ -109,7 +109,7 @@ d.ops_develop/
 ├── c.env_check/                       ③ 容器内环境检查（只读）
 │   ├── run.sh                 芯片识别 + 版本兼容矩阵 + 建议
 │   └── readme.md              功能说明
-└── h.op_agent/                        ④ OpenCode 运行时 + Skill 管理
+└── d.op_agent/                        ④ OpenCode 运行时 + Skill 管理
     ├── a.install_opencode/   安装 opencode 绿色版（即开即用）
     ├── b.skill_store/        离线 Skill 仓库（选装/卸载）
     ├── c.update_skill/       联网更新 skill 仓库
@@ -133,9 +133,9 @@ bash d.ops_develop/c.env_check/run.sh
 bash d.ops_develop/c.env_check/run.sh
 
 # ④ 安装 OpenCode 运行时 + 选装 Skill
-bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
-bash d.ops_develop/h.op_agent/b.skill_store/run.sh
-bash d.ops_develop/h.op_agent/c.update_skill/run.sh   # 联网更新 skill 仓库（可选）
+bash d.ops_develop/d.op_agent/a.install_opencode/run.sh
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh
+bash d.ops_develop/d.op_agent/c.update_skill/run.sh   # 联网更新 skill 仓库（可选）
 ```
 
 ---

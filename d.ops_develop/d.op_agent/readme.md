@@ -1,6 +1,6 @@
-# h.op_agent — OpenCode 运行时与 Skill 管理
+# d.op_agent — OpenCode 运行时与 Skill 管理
 
-> 算子开发工作流第 8 步：安装 OpenCode 绿色运行时，并提供离线的 Skill 仓库（选装）与联网更新仓库的能力。
+> 算子开发工作流第 4 步：安装 OpenCode 绿色运行时，并提供离线的 Skill 仓库（选装）与联网更新仓库的能力。
 
 ## 背景与定位
 
@@ -22,7 +22,7 @@ Ascend/agent-skills（官方总仓/插件市场，覆盖全模块）
 ## 目录
 
 ```text
-h.op_agent/
+d.op_agent/
 ├── a.install_opencode/         安装 opencode 绿色版（二进制 + 配置，即开即用）
 │   ├── opencode.tar.gz         = opencode + CANNBot 1.1.0（74 skill + 18 agent 快照）
 │   └── run.sh
@@ -50,7 +50,7 @@ opencode 只认 `skills/<name>/SKILL.md` 一层扁平结构，且 `name` 须与�
 ### 1. 安装 opencode 运行时（离线，即开即用）
 
 ```bash
-bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
+bash d.ops_develop/d.op_agent/a.install_opencode/run.sh
 ```
 
 解压后即拥有 opencode + CANNBot 1.1.0 基础能力（74 skill + 18 agent），无需联网。
@@ -61,11 +61,11 @@ bash d.ops_develop/h.op_agent/a.install_opencode/run.sh
 ### 2. 离线选装 skill（推荐，应对无网络客户机）
 
 ```bash
-bash d.ops_develop/h.op_agent/b.skill_store/run.sh          # 交互式按模块勾选
-bash d.ops_develop/h.op_agent/b.skill_store/run.sh list     # 列出仓库全部 skill（按模块）
-bash d.ops_develop/h.op_agent/b.skill_store/run.sh status   # 查看已装 skill
-bash d.ops_develop/h.op_agent/b.skill_store/run.sh install <skill原名>   # 装指定 skill
-bash d.ops_develop/h.op_agent/b.skill_store/run.sh uninstall <skill原名> # 卸载
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh          # 交互式按模块勾选
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh list     # 列出仓库全部 skill（按模块）
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh status   # 查看已装 skill
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh install <skill原名>   # 装指定 skill
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh uninstall <skill原名> # 卸载
 ```
 
 - 全离线，解压到 `b.skill_store/repo/`，选中后按原名复制进 opencode 的 `config/opencode/skills/`
@@ -74,7 +74,7 @@ bash d.ops_develop/h.op_agent/b.skill_store/run.sh uninstall <skill原名> # 卸
 ### 3. 联网更新 skill 仓库（开发机，需 git + python3 + 网络）
 
 ```bash
-bash d.ops_develop/h.op_agent/c.update_skill/run.sh
+bash d.ops_develop/d.op_agent/c.update_skill/run.sh
 ```
 
 - 从官方总仓浅克隆/更新后，重新构建 `b.skill_store/skills.tar.gz`
@@ -101,7 +101,7 @@ bash d.ops_develop/h.op_agent/c.update_skill/run.sh
 
 ```bash
 # 联网重新打包（推荐）
-bash d.ops_develop/h.op_agent/c.update_skill/run.sh
+bash d.ops_develop/d.op_agent/c.update_skill/run.sh
 
 # 或手动（已有总仓 clone）
 python3 c.update_skill/build_store.py <总仓路径> b.skill_store/skills.tar.gz

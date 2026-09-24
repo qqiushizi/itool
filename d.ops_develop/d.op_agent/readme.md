@@ -55,8 +55,11 @@ bash d.ops_develop/d.op_agent/a.install_opencode/run.sh
 
 解压后即拥有 opencode + CANNBot 1.1.0 基础能力（74 skill + 18 agent），无需联网。
 
-> 注意：便携版 opencode 通过 `start.sh` 把 `XDG_CONFIG_HOME` 指向绿色包内的 `config/`，
-> 因此其真实 skills 目录是 `opencode/config/opencode/skills/`（而非 `~/.config/opencode/skills/`）。
+> 如需**只解压、不启动**（供其它脚本调用）：`bash d.ops_develop/d.op_agent/a.install_opencode/run.sh ensure`
+
+> 注意：便携版 opencode 由 `a.install_opencode/run.sh` 启动，脚本内部把 `XDG_CONFIG_HOME`
+> 指向绿色包内的 `config/`，因此其真实 skills 目录是 `opencode/config/opencode/skills/`
+> （而非 `~/.config/opencode/skills/`）。
 
 ### 2. 离线选装 skill（推荐，应对无网络客户机）
 
@@ -70,6 +73,7 @@ bash d.ops_develop/d.op_agent/b.skill_store/run.sh uninstall <skill原名> # 卸
 
 - 全离线，解压到 `b.skill_store/repo/`，选中后按原名复制进 opencode 的 `config/opencode/skills/`
 - 同名 skill 会选择覆盖（用于更新基础包里的旧版）
+- **顺序无关**：若 opencode 绿色包尚未解压，本脚本会自动调用 `a.install_opencode/run.sh ensure` 先解压，再装 skill
 
 ### 3. 联网更新 skill 仓库（开发机，需 git + python3 + 网络）
 

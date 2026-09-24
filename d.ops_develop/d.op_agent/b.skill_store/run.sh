@@ -15,7 +15,7 @@
 #   - my-skill 目录随 git 跟踪，重打包/更新仓库不会覆盖它
 #   - 全离线，不依赖网络
 #   - 安装目标 = opencode 绿色包内的 config/opencode/skills/
-#     （便携版 opencode 通过 start.sh 把 XDG_CONFIG_HOME 指到 config/）
+#     （若 opencode 尚未解压，会自动调用 a.install_opencode/run.sh ensure 先解压）
 #
 # 用法:
 #   bash b.skill_store/run.sh            # 交互式选装
@@ -37,13 +37,17 @@ CYAN='\033[0;36m'; WHITE='\033[1;37m'; RESET='\033[0m'
 
 # ---------- 定位 opencode 的 skills 目录 ----------
 resolve_opencode_skills() {
-    OPCODE_ROOT=""
-    if [ -d "$A_INSTALL_DIR/opencode" ]; then
-        OPCODE_ROOT="$A_INSTALL_DIR/opencode"
-    else
-        echo -e "${YELLOW}[提示] 尚未解压 opencode 绿色包。${RESET}"
-        echo "  请先运行: bash $A_INSTALL_DIR/run.sh"
-        return 1
+    OPCODE_ROOT="$A_INSTALL_DIR/opencode"
+    if [ ! -x "$OPCODE_ROOT/bin/opencode" ]; then
+        echo -e "${YELLOW}[提示] 尚未解压 opencode，正在自动解压绿色包...${RESET}"
+        if [ ! -f "$A_INSTALL_DIR/run.sh" ]; then
+            echo -e "${RED}[ERROR] 找不到 opencode 安装脚本: $A_INSTALL_DIR/run.sh${RESET}" >&2
+            return 1
+        fi
+        if ! bash "$A_INSTALL_DIR/run.sh" ensure; then
+            echo -e "${RED}[ERROR] 自动解压 opencode 失败，请先运行: bash $A_INSTALL_DIR/run.sh${RESET}" >&2
+            return 1
+        fi
     fi
     CONFIG_SKILLS="$OPCODE_ROOT/config/opencode/skills"
     mkdir -p "$CONFIG_SKILLS"
@@ -237,7 +241,7 @@ case "$CMD" in
             echo -e "${RED}用法: $0 install <skill原名>${RESET}" >&2
             exit 1
         fi
-        local found=0 mp
+        found=0
         for mp in "${MODULE_PATHS[@]}"; do
             if [ -d "$mp/${2:-}" ]; then
                 install_one "$mp" "${2:-}"

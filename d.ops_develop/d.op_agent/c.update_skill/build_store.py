@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """
 从 Ascend/agent-skills 总仓抽取全部 skill，按【模块目录分类】打包离线仓库 skills.tar.gz。
-name 保持原名，同名 skill 覆盖（后写覆盖先写）。
+
+关键规则（与 opencode 的 skill 规范对齐）：
+  - skill 的最终目录名取 SKILL.md 的 `name` 字段（不是上游目录名），
+    保证「目录名 == name」；同名按后写覆盖先写。
+  - name 需满足 `^[a-z0-9]+(-[a-z0-9]+)*$`，否则做规整（小写、非法字符转连字符、
+    取最后一个 `/` 段、合并多余连字符），规整后仍非法则跳过。
+  - 打包时同步把 SKILL.md 的 name 行改写成最终目录名，保证一致。
 
 用法:
   python3 build_store.py <总仓路径> <输出tar路径>
 
 输出结构（skills.tar.gz 解压后）:
-  <模块>/<skill原名>/SKILL.md
+  <模块>/<skillname>/SKILL.md
   entries.json
 """
 import os, re, json, shutil, sys, tarfile, tempfile
@@ -26,6 +32,8 @@ MODULE_MAP = {
     ('community', 'Tools'): 'community-tools',
 }
 
+NAME_RE = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
+
 def get_module(rel):
     parts = rel.split('/')
     key = (parts[0], parts[1]) if len(parts) >= 2 else (parts[0], '')
@@ -40,6 +48,38 @@ def collect_skills(src):
             skills.append(rel)
     return sorted(skills)
 
+def read_name(skill_dir):
+    """读取 SKILL.md 的 name 字段（兼容 BOM）；没有则返回 None。"""
+    sk = os.path.join(skill_dir, 'SKILL.md')
+    try:
+        txt = open(sk, encoding='utf-8-sig', errors='replace').read()
+    except OSError:
+        return None
+    m = re.search(r'---\s*\n(.*?)\n---', txt, re.S)
+    if not m:
+        return None
+    nm = re.search(r'^name:\s*(.+?)\s*$', m.group(1), re.M)
+    if not nm:
+        return None
+    return nm.group(1).strip().strip('"\'')
+
+def canonical_name(raw_name, fallback):
+    """规整出合法的 opencode skill 名；非法则返回 None。"""
+    n = (raw_name or '').strip()
+    if not n:
+        n = fallback
+    n = n.split('/')[-1].lower()
+    n = re.sub(r'[^a-z0-9]+', '-', n)
+    n = re.sub(r'-+', '-', n).strip('-')
+    return n if NAME_RE.fullmatch(n) else None
+
+def rewrite_sk_name(skill_dir, name):
+    sk = os.path.join(skill_dir, 'SKILL.md')
+    txt = open(sk, encoding='utf-8-sig', errors='replace').read()
+    txt = re.sub(r'^(name:\s*).*?(\s*)$', r'\g<1>' + name + r'\g<2>',
+                 txt, count=1, flags=re.M)
+    open(sk, 'w', encoding='utf-8').write(txt)
+
 def main():
     if len(sys.argv) != 3:
         print('用法: python3 build_store.py <总仓路径> <输出tar路径>', file=sys.stderr)
@@ -49,22 +89,29 @@ def main():
 
     skills = collect_skills(src)
     entries = []
+    used = set()  # (module, name) 去重
     for s in skills:
         mod = get_module(s)
         if not mod:
             print('跳过未映射模块:', s, file=sys.stderr)
             continue
-        name = s.split('/')[-1]  # 原名
-        entries.append({'src': s, 'module': mod, 'name': name})
+        raw = read_name(os.path.join(src, s.replace('/', os.sep)))
+        name = canonical_name(raw, s.split('/')[-1])
+        if not name:
+            print('跳过（name 非法）:', mod, s, file=sys.stderr)
+            continue
+        if (mod, name) in used:
+            print('跳过（同名）:', mod, name, '<-', s, file=sys.stderr)
+            continue
+        used.add((mod, name))
+        entries.append({'src': s, 'module': mod, 'name': name, 'raw_name': raw})
 
-    # 打 tar 到临时目录（覆盖策略）
     tmp = tempfile.mkdtemp(prefix='skillstore_')
     for e in entries:
-        dst_dir = os.path.join(tmp, e['module'], e['name'])
         src_dir = os.path.join(src, e['src'].replace('/', os.sep))
-        if os.path.exists(dst_dir):
-            shutil.rmtree(dst_dir)  # 同名覆盖
+        dst_dir = os.path.join(tmp, e['module'], e['name'])
         shutil.copytree(src_dir, dst_dir)
+        rewrite_sk_name(dst_dir, e['name'])
 
     with open(os.path.join(tmp, 'entries.json'), 'w', encoding='utf-8') as f:
         json.dump(entries, f, ensure_ascii=False, indent=1)
@@ -75,9 +122,6 @@ def main():
             tar.add(os.path.join(tmp, name), arcname=name)
 
     shutil.rmtree(tmp)
-
-    total = sum(os.path.getsize(os.path.join(r, f))
-                for r, _, fs in os.walk(tmp) for f in fs) if os.path.exists(tmp) else 0
     print('打包完成: %d 个 skill' % len(entries))
     print('  tar: %s (%.2f MB)' % (out_tar, os.path.getsize(out_tar) / 1024 / 1024))
 

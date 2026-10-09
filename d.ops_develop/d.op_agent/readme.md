@@ -75,6 +75,16 @@ bash d.ops_develop/d.op_agent/b.skill_store/run.sh uninstall <skill原名> # 卸
 - 同名 skill 会选择覆盖（用于更新基础包里的旧版）
 - **顺序无关**：若 opencode 绿色包尚未解压，本脚本会自动调用 `a.install_opencode/run.sh ensure` 先解压，再装 skill
 
+**怎么确认 skill 已生效**（opencode 不会主动弹「已配置」）：
+
+```bash
+# 直接看已装进 opencode 的 skill 目录
+ls d.ops_develop/d.op_agent/a.install_opencode/opencode/config/opencode/skills/
+
+# 或查看离线仓库的已装状态（带 * 表示已覆盖进 opencode）
+bash d.ops_develop/d.op_agent/b.skill_store/run.sh status
+```
+
 ### 3. 联网更新 skill 仓库（开发机，需 git + python3 + 网络）
 
 ```bash
@@ -89,6 +99,7 @@ bash d.ops_develop/d.op_agent/c.update_skill/run.sh
 ## 关于 Skill 与 agent 的辨析
 
 - **Skill**（能力）≠ **agent**（运行时）。散装 skill 装进去后，由 opencode 主 agent 通过 `SKILL.md` 的 `description` 语义匹配、按需调用。
+- skill 是**按需加载**的（原生 `skill` 工具 + 语义匹配），TUI 里不会有醒目的「已配置 skill」列表；只要 skill 目录里有对应 `SKILL.md`、且 `name` 与目录名一致，就算配置好了。
 - CANNBot 是成体系的（skill + agent 配套）；官方总仓其他模块（PyTorch/MindStudio/vllm-ascend 等）多为散装 skill。
 - opencode 对 skill 名称的约束：`name` 必须与目录名一致，且只能小写字母数字 + 单连字符（不能含 `/`、下划线、大写）。
 
